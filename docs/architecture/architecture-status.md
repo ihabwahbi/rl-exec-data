@@ -1,11 +1,15 @@
 # Architecture Status
 
 **Last Updated**: 2025-07-19  
-**Current Phase**: Epic 0 Complete, Epic 1 Ready
+**Current Phase**: Validation Foundation - Critical Issues Discovered
+
+## ⚠️ Critical Status Update
+
+Story 1.2 implementation revealed fundamental misunderstandings between specification and implementation. Architecture must pivot to a **validation-first approach** based on empirical evidence rather than assumptions.
 
 ## Executive Summary
 
-The RLX Data Pipeline architecture has successfully guided the implementation of Epic 0 (Data Acquisition). With real Crypto Lake data now accessible, the architecture pivots to support Epic 1 implementation while maintaining alignment with validated technical constraints.
+While Epic 0 (Data Acquisition) is complete, Story 1.2 implementation issues have exposed a critical gap: we've been building based on theoretical understanding rather than empirical validation. The architecture must evolve to establish a solid foundation through systematic validation before proceeding with complex reconstruction.
 
 ## Architecture Evolution
 
@@ -31,7 +35,25 @@ The architecture has evolved through several critical phases:
 - CLI architecture successful with Click framework
 - Staging area pattern effective for data management
 
-## Component Status
+## Critical Issues from Story 1.2 Implementation
+
+### What Was Built vs What Was Needed
+1. **Output Format**: Transformed data instead of raw preservation
+   - Built: `{"type": "trade", "price": "...", "quantity": "..."}`
+   - Needed: `{"capture_ns": 123, "stream": "btcusdt@trade", "data": {raw}}`
+
+2. **WebSocket URL**: Missing critical @100ms suffix
+   - Built: `btcusdt@depth`
+   - Needed: `btcusdt@depth@100ms`
+
+3. **Architecture Over-engineering**: Complex parsing when simple capture needed
+
+### Root Cause: Assumption-Driven Development
+- Developer interpreted requirements based on assumptions
+- No empirical validation framework to catch misunderstandings early
+- Research findings not effectively integrated into specifications
+
+## Component Status - Revised
 
 ### 1. DataAcquisition ✅ IMPLEMENTED
 - **Purpose**: Download and stage Crypto Lake historical data
@@ -41,25 +63,33 @@ The architecture has evolved through several critical phases:
   - `/src/rlx_datapipe/acquisition/data_downloader.py`
   - `/scripts/acquire_data_lakeapi.py`
 
-### 2. DataAssessor ⏳ READY TO START
+### 2. DataAssessor ❌ NEEDS RE-EXECUTION
 - **Purpose**: Analyze data quality and characteristics
-- **Next**: Story 1.1 - Analyze origin_time completeness
-- **Dependencies**: Requires real data from DataAcquisition
+- **Issue**: Story 1.1 executed with synthetic data, not real data
+- **Action**: Re-execute with actual Crypto Lake data
 
-### 3. LiveCapture ⏳ PENDING
+### 3. LiveCapture ❌ NEEDS FIXES
 - **Purpose**: Capture golden samples from Binance
-- **Next**: Story 1.2 - Implement after origin_time analysis
-- **Key Requirement**: Combined stream architecture per Gemini research
+- **Issues**: Wrong output format, missing @100ms, wrong location
+- **Critical**: Must preserve raw messages for validation
 
-### 4. Reconstructor ⏸️ BLOCKED
+### 4. ValidationFramework 🆕 NEW COMPONENT NEEDED
+- **Purpose**: Empirically validate all assumptions
+- **Components**:
+  - Statistical test suite
+  - Research claim validator
+  - Automated comparison tools
+  - Fidelity report generator
+
+### 5. Reconstructor ⏸️ BLOCKED
 - **Purpose**: Transform historical data to unified stream
-- **Blocked By**: Epic 1 validation results
-- **Critical Decision**: Delta feed viability (Story 1.2.5)
+- **Blocked By**: Validation framework results
+- **Decision Point**: Approach depends on empirical findings
 
-### 5. FidelityReporter ⏸️ BLOCKED
+### 6. FidelityReporter ⏸️ BLOCKED
 - **Purpose**: Validate reconstruction quality
-- **Blocked By**: Reconstructor implementation
-- **Design**: Metrics catalog defined in research
+- **Blocked By**: Need golden samples first
+- **Integration**: Part of ValidationFramework
 
 ## Technical Architecture Decisions
 
@@ -98,34 +128,68 @@ The architecture has evolved through several critical phases:
 | Decimal precision | Medium | Int64 fallback ready | 🔍 To test |
 | Schema changes | Medium | Version detection | 📋 To design |
 
-## Epic 1 Architecture Guidance
+## New Architectural Approach: Validation-First
 
-### Story 1.1: Origin Time Analysis
-**Architecture Requirements**:
-- Load real Crypto Lake data efficiently
-- Analyze timestamp completeness
-- Report statistics for both trades and book tables
+### Phase 1: Empirical Foundation (Immediate)
 
-**Implementation Pattern**:
+#### 1.1 Fix LiveCapture (Story 1.2)
 ```python
-# Use proven DataDownloader patterns
-# Leverage Polars for efficient analysis
-# Follow established error handling
+# Correct implementation - NO transformation
+async def handle_message(msg, receive_ns):
+    output = {
+        "capture_ns": receive_ns,
+        "stream": msg["stream"], 
+        "data": msg["data"]  # Raw preservation
+    }
+    await writer.write_line(json.dumps(output))
+
+# Correct WebSocket URL
+ws_url = f"wss://stream.binance.com:9443/stream?streams={symbol}@trade/{symbol}@depth@100ms"
 ```
 
-### Story 1.2: Live Capture Design
-**Critical Architecture Elements** (from Gemini research):
-- Combined WebSocket stream mandatory
-- Order book initialization protocol
-- Chronological event ordering
-- State management for book maintenance
+#### 1.2 Build ValidationFramework
+- Statistical test implementations (K-S, Anderson-Darling)
+- Research claim validators
+- Automated comparison tools
+- Continuous validation pipeline
 
-### Story 1.2.5: Technical Validation
-**Architecture Validation Points**:
-- Memory profiling with 1-hour data (8M events)
-- Throughput testing (target: 100k events/sec)
-- Decimal128 operations at scale
-- I/O performance for 220GB monthly data
+#### 1.3 Empirical Testing
+- Test each AI research assumption
+- Measure actual system characteristics
+- Document findings in decision records
+
+### Phase 2: Adaptive Implementation (After Validation)
+
+Based on empirical findings, choose:
+
+1. **If origin_time 100% reliable**: Simple timestamp merging
+2. **If snapshots have gaps**: Snapshot-anchored approach
+3. **If delta feed complete**: Full event reconstruction
+4. **If memory constrained**: Streaming with windows
+
+### Phase 3: Continuous Validation
+
+- Every component validated against golden samples
+- Automated regression testing
+- Performance benchmarks tracked
+- Fidelity metrics monitored
+
+## Epic 1 Architecture Guidance - Revised
+
+### Immediate Actions (Week 1)
+1. **Fix Story 1.2**: Correct WebSocket URL, preserve raw format, move to scripts/
+2. **Re-run Story 1.1**: Use real Crypto Lake data
+3. **Capture Golden Sample**: 24-hour raw data capture
+
+### Validation Framework (Week 2)
+1. **Build Core Validators**: K-S tests, microstructure analyzers
+2. **Research Claim Testing**: Validate each assumption empirically
+3. **Automated Reporting**: Fidelity score generation
+
+### Decision Points (Week 3)
+1. **Delta Feed Viability**: Can we use book_delta_v2?
+2. **Memory Feasibility**: Can we process 8M events in 28GB?
+3. **Reconstruction Approach**: Snapshot vs full replay?
 
 ## Next Architecture Updates
 

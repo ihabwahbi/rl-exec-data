@@ -16,6 +16,13 @@
 * **Testing Framework:** Unit and integration tests for the pipeline will be written using `pytest`.
 * **Hardware Constraint:** All performance requirements and development must consider the target local hardware (Beelink SER9 with 32GB RAM). Memory usage must not exceed 28GB to allow for OS overhead. Delta feed processing for 1 hour of BTC-USDT data (~8M events) must fit within this constraint or implement streaming/chunking.
 
+## WebSocket Stream Assumptions
+
+* **Combined Stream Requirement:** Binance WebSocket connections must use the combined stream endpoint (`/stream?streams=...`) to ensure chronological ordering of events across different data types (trades and depth).
+* **Stream Naming Convention:** The depth stream must use the `@depth@100ms` suffix (not just `@depth`) to match the 100ms snapshot frequency of historical data.
+* **Timestamp Precision:** All timestamps must be captured with nanosecond precision using `time.perf_counter_ns()` for accurate latency measurements.
+* **Order Book Synchronization:** The order book synchronization protocol (REST snapshot + buffered WebSocket updates) must be implemented exactly as specified in Binance documentation to prevent gaps or inconsistencies.
+
 ## Risk Mitigation
 
 * **Synthetic Data Fallback:** If actual Crypto Lake data cannot be acquired within the first week, project timeline must be extended or scope reduced. No validation work should proceed without real data.

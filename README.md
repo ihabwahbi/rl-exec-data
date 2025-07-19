@@ -19,6 +19,9 @@ This project processes historical BTC-USDT L2 order book data from Crypto Lake t
 
 ## Installation
 
+See [Development Setup Guide](docs/SETUP.md) for detailed installation instructions.
+
+Quick start:
 ```bash
 poetry install
 ```
