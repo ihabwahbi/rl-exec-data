@@ -1,0 +1,245 @@
+# Python
+*__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+data/
+
+
+# Virtual Environments
+venv/
+.venv/
+ENV/
+env/
+.env.local
+.env.*.local
+
+# Poetry
+poetry.lock
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Linting and Formatting
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# IDE and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.cursor/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+
+# Data and Outputs
+data/staging/
+data/analysis/*.parquet
+data/analysis/*.csv
+data/analysis/*.json
+!data/analysis/*.md
+data/benchmark_results/
+data/io_analysis/
+data/test_sample/
+*.parquet
+*.csv
+!.env.example
+!pyproject.toml
+!package.json
+!package-lock.json
+!docs/**/*.json
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Lake Cache
+.lake_cache/
+
+# Notebooks
+notebooks/.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Documentation Build
+docs/_build/
+docs/.doctrees/
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+.cache/
+
+
+# BMAD Core (project specific)
+# Uncomment if you want to exclude bmad-core
+# .bmad-core/
+
+# Expansion Packs (project specific)
+# Uncomment if you want to exclude expansion-packs
+# expansion-packs/
+
+# Agents and Teams (project specific)
+# These might be project config, so keeping them
+# agents/
+# teams/
+
+# Compiled Documentation
+*.pdf
+*.docx
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets and Credentials
+*.pem
+*.key
+*.cert
+*.crt
+private/
+secrets/
+
+# Archives
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# OS Generated Files
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Python Type Checking
+.pyre/
+.pytype/
+
+# Profiling
+*.prof
+*.lprof
+
+# Backup Files
+*.backup
+*.old
+
+# Build Artifacts
+build/
+_build/
+
+# Jupyter
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# mkdocs
+site/
+
+# Django
+*.pot
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Sphinx
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# PyBuilder
+target/
+
+# DotEnv
+.env
+
+# Anaconda
+.conda/
+
+# pyright
+pyrightconfig.json
