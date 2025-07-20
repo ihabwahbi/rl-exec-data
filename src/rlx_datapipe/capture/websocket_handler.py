@@ -77,7 +77,11 @@ class WebSocketHandler:
 
         try:
             data = json.loads(message)
-            self.on_message(data, receive_ns)
+            # Check if on_message is async and await it
+            if asyncio.iscoroutinefunction(self.on_message):
+                await self.on_message(data, receive_ns)
+            else:
+                self.on_message(data, receive_ns)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse message: {e}")
         except Exception as e:

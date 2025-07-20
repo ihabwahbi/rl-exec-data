@@ -36,8 +36,12 @@ class DataCapture:
         self.duration = duration
 
         # Initialize components
-        # Single writer for chronological order
-        self.writer = JSONLWriter(output_dir, f"{symbol}_capture_{int(time.time())}")
+        # Single writer for chronological order with small buffer for immediate writes
+        self.writer = JSONLWriter(
+            output_dir, 
+            f"{symbol}_capture_{int(time.time())}",
+            buffer_size=10  # Small buffer for quicker writes
+        )
 
         # WebSocket URL for combined streams
         self.ws_url = f"wss://stream.binance.com:9443/stream?streams={self.symbol}@trade/{self.symbol}@depth@100ms"
@@ -68,7 +72,7 @@ class DataCapture:
         # Write to single chronological file
         self.writer.write(output)
 
-    async def _on_connect(self) -> None:
+    def _on_connect(self) -> None:
         """Handle WebSocket connection established."""
         logger.info("WebSocket connected")
         # Note: Order book synchronization is handled separately
@@ -85,7 +89,11 @@ class DataCapture:
 
         logger.info(f"=== Capture Statistics (elapsed: {elapsed:.1f}s) ===")
         logger.info(f"Total records: {writer_stats['total_records']}")
+        logger.info(f"Buffered records: {writer_stats.get('buffer_size', 0)}")
         logger.info(f"Current file: {writer_stats.get('current_file', 'N/A')}")
+        
+        # Force flush to ensure data is written
+        self.writer.flush()
 
     async def run(self) -> None:
         """Run the data capture."""
@@ -96,7 +104,7 @@ class DataCapture:
         ws_handler = WebSocketHandler(
             url=self.ws_url,
             on_message=self._on_message,
-            on_connect=lambda: asyncio.create_task(self._on_connect())
+            on_connect=self._on_connect
         )
 
         # Start periodic stats printing
