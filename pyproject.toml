@@ -18,6 +18,9 @@ click = "^8.1.0"
 tqdm = "^4.66.0"
 websockets = "^12.0"
 aiohttp = "^3.9.0"
+scipy = "^1.13.0"
+numpy = "^1.26.0"
+psutil = "^5.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"

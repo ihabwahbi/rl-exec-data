@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from loguru import logger
+
 from rlx_datapipe.analysis.origin_time_analyzer import OriginTimeAnalyzer
 
 

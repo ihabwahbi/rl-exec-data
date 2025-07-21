@@ -1,0 +1,108 @@
+{
+  "success": true,
+  "file_info": {
+    "path": "data/golden_samples/high_volume/btcusdt_capture_1753018289_20250721_053135.jsonl.gz",
+    "size_mb": 10.43,
+    "estimated_uncompressed_mb": 83.4,
+    "compression_ratio": 8.0,
+    "modified": "2025-07-21T06:31:35.683851"
+  },
+  "event_count": 201389,
+  "count_duration": 0.79,
+  "validation": {
+    "overall_passed": false,
+    "total_duration": 7.56,
+    "peak_memory_mb": 108.33,
+    "memory_increase_mb": 4.55,
+    "validators_run": 7,
+    "validators_passed": 4,
+    "results": [
+      {
+        "validator": "Chronological Order Check",
+        "passed": true,
+        "metrics": {
+          "file1": {
+            "total_messages": 237210,
+            "out_of_order": 0,
+            "out_of_order_ratio": 0.0,
+            "max_backwards_jump_ns": 0,
+            "chronologically_ordered": true
+          },
+          "file2": {
+            "total_messages": 237210,
+            "out_of_order": 0,
+            "out_of_order_ratio": 0.0,
+            "max_backwards_jump_ns": 0,
+            "chronologically_ordered": true
+          },
+          "both_ordered": true,
+          "interpretation": "Both files are chronologically ordered"
+        },
+        "duration": 1.3445839599589817,
+        "error": null
+      },
+      {
+        "validator": "Sequence Gap Detection",
+        "passed": true,
+        "metrics": {
+          "file1": {
+            "total_updates": 35821,
+            "gaps_detected": 0,
+            "gap_ratio": 0.0,
+            "max_gap_size": 0,
+            "symbols_tracked": 1
+          },
+          "file2": {
+            "total_updates": 35821,
+            "gaps_detected": 0,
+            "gap_ratio": 0.0,
+            "max_gap_size": 0,
+            "symbols_tracked": 1
+          },
+          "max_gap_ratio": 0.001,
+          "both_within_threshold": true,
+          "interpretation": "Sequence gaps within threshold (0.1000%)"
+        },
+        "duration": 1.4531997970188968,
+        "error": null
+      },
+      {
+        "validator": "Basic Statistics Comparison",
+        "passed": true,
+        "metrics": {
+          "sample1_stats": {
+            "mean": 117215.71133711378,
+            "std": 458.390187380781,
+            "median": 117164.67,
+            "min": 116467.02,
+            "max": 118153.88,
+            "q25": 116899.98,
+            "q75": 117621.84,
+            "count": 201389
+          },
+          "sample2_stats": {
+            "mean": 117215.71133711378,
+            "std": 458.390187380781,
+            "median": 117164.67,
+            "min": 116467.02,
+            "max": 118153.88,
+            "q25": 116899.98,
+            "q75": 117621.84,
+            "count": 201389
+          },
+          "mean_relative_diff": 0.0,
+          "std_relative_diff": 0.0,
+          "median_relative_diff": 0.0,
+          "thresholds": {
+            "mean_relative_diff": 0.001,
+            "std_relative_diff": 0.001,
+            "median_relative_diff": 0.001
+          },
+          "interpretation": "Statistics are similar"
+        },
+        "duration": 0.004835519008338451,
+        "error": null
+      },
+      {
+        "validator": "Kolmogorov-Smirnov Test",
+        "passed": 

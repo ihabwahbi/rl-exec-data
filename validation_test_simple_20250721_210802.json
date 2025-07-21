@@ -1,0 +1,36 @@
+{
+  "test_file": "btcusdt_capture_1753018179_20250721_012945.jsonl.gz",
+  "file_stats": {
+    "path": "data/golden_samples/high_volume/btcusdt_capture_1753018179_20250721_012945.jsonl.gz",
+    "size_mb": 6.15,
+    "total_messages": 114123,
+    "trade_messages": 78234,
+    "orderbook_messages": 35889
+  },
+  "validation": {
+    "overall_passed": true,
+    "duration_seconds": 2.33,
+    "peak_memory_mb": 105.14,
+    "messages_per_second": 49078.66
+  },
+  "validators": [
+    {
+      "name": "Chronological Order Check",
+      "passed": true,
+      "duration": 0.71,
+      "error": null
+    },
+    {
+      "name": "Sequence Gap Detection",
+      "passed": true,
+      "duration": 0.77,
+      "error": null
+    },
+    {
+      "name": "Basic Statistics Comparison",
+      "passed": true,
+      "duration": 0.0,
+      "error": null
+    }
+  ]
+}
