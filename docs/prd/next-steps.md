@@ -1,10 +1,10 @@
 # Next Steps
 
-**Last Updated**: 2025-07-21
+**Last Updated**: 2025-07-22
 
 ## Epic 1 Complete - Ready for Epic 2 🚀
 
-With Epic 1 **100% complete** and all technical validations exceeding expectations, the project is ready to begin Epic 2 with the FullReconstruction strategy:
+With Epic 1 **100% complete** and deep research insights integrated, the project is ready to begin Epic 2 with the FullReconstruction strategy enhanced by validated architecture patterns:
 
 ### 1. Epic 1 Retrospective ✅ COMPLETE
 **All Validations Exceeded Expectations**
@@ -88,7 +88,7 @@ All major risks have been resolved:
 * Weekly: Generate fidelity reports vs golden samples
 * Before Epic 3: Comprehensive end-to-end validation
 
-## Key Architecture Decisions
+## Key Architecture Decisions (Research-Validated)
 
 ### 1. FullReconstruction Strategy ✅ CONFIRMED
 Based on 0% delta gaps, implement full event replay:
@@ -96,7 +96,14 @@ Based on 0% delta gaps, implement full event replay:
 - Maintain complete order book state
 - Maximum fidelity for RL agent training
 
-### 2. Unified Event Schema
+### 2. Performance Architecture (From Research)
+- > [ASSUMPTION][R-CLD-01] Hybrid Delta-Event Sourcing (40-65% memory efficiency)
+- > [ASSUMPTION][R-GMN-01] Scaled int64 arithmetic for hot path
+- > [ASSUMPTION][R-ALL-01] Micro-batching for vectorization
+- > [ASSUMPTION][R-CLD-02] Memory-mapped I/O (13x improvement)
+- > [ASSUMPTION][R-GMN-02] Single-process per symbol (avoid GIL)
+
+### 3. Unified Event Schema
 ```python
 {
     "timestamp": int,  # Nanosecond precision
@@ -107,16 +114,27 @@ Based on 0% delta gaps, implement full event replay:
 }
 ```
 
-### 3. Performance Architecture
-- Streaming processing (proven in Epic 1)
-- Memory-bounded with checkpointing
-- Parallel processing where applicable
-- Target: 100k+ events/sec sustained
+### 4. Data Structure Decisions (From Research)
+- > [ASSUMPTION][R-GMN-04] Hybrid: arrays for top-of-book, hash for deep
+- > [ASSUMPTION][R-OAI-03] Copy-on-write checkpointing
+- > [ASSUMPTION][R-CLD-04] Manual GC control in hot paths
 
-### 4. Quality Assurance
+### 5. Quality Assurance (Enhanced from Research)
 - ValidationFramework at every stage
 - Golden samples as ground truth
+- > [ASSUMPTION][R-CLD-03] Multi-level spread analysis (L1-L20)
+- > [ASSUMPTION][R-GMN-03] Power law tail validation (α ∈ [2,5])
+- > [ASSUMPTION][R-OAI-02] GARCH(1,1) volatility modeling
+- > [ASSUMPTION][R-CLD-05] Order Flow Imbalance metrics
 - Automated fidelity reporting
 - Continuous statistical validation
 
-**PROJECT STATUS**: Epic 1 is **100% complete** with exceptional results. Epic 2 is ready to begin with the FullReconstruction strategy based on perfect delta feed quality. All technical risks have been mitigated.
+## Risk Mitigation Updates
+
+### New Risk Identified
+* **[RISK][R-GMN-06] Polars Decimal128 Instability**: 
+  - **Issue**: Polars marks Decimal type as unstable
+  - **Mitigation**: Implement int64 scaled arithmetic as primary, Decimal128 as fallback
+  - **Validation**: Benchmark both approaches in Story 2.1b
+
+**PROJECT STATUS**: Epic 1 is **100% complete** with exceptional results. Deep research has been integrated with 20 new assumptions properly tagged and tracked. Epic 2 is ready to begin with the FullReconstruction strategy enhanced by industry best practices. All technical risks have been identified with mitigations in place.

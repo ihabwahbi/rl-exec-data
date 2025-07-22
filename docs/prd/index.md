@@ -19,6 +19,7 @@
   - [Epic 3: Automated Fidelity Validation & Reporting](./epics.md#epic-3-automated-fidelity-validation-reporting)
 - [Technical Assumptions](./technical-assumptions.md)
 - [Research](./research/initial-research.md) - **Consolidated research findings**
+- [Research Impact Matrix](./research-impact-matrix.md) - **Deep research insights mapping**
 - [Next Steps](./next-steps.md)
 - [Changelog](./changelog.md) - **Version history**
 

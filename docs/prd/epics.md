@@ -57,9 +57,17 @@ The work is structured into four logical epics, with Epic 0 (Data Acquisition) a
 **Strategy Decision**: Based on the **0% sequence gaps** discovered in the delta feed validation, Epic 2 will implement the **FullReconstruction strategy**. This approach provides maximum fidelity by replaying every order book change event from the `book_delta_v2` data, ensuring the backtesting environment perfectly mirrors live trading conditions. The ValidationFramework will provide continuous quality assurance against the 11.15M golden sample messages.
 
 * **Story 2.1: Implement Data Ingestion & Unification:** Build the core pipeline logic that loads the separate `trades` and `book` data, labels them by type, and merges them into a single chronological stream according to the strategy determined in Epic 1.
+    * > [ASSUMPTION][R-ALL-01] Implement micro-batching (100-1000 events) for Polars vectorization optimization
 * **Story 2.1b: Implement Delta Feed Parser & Order Book Engine:** ✅ Delta feed validated with 0% gaps. Implement parser for `book_delta_v2` data and full order book reconstruction engine. Process deltas in update_id order with sequence gap detection and recovery.
+    * > [ASSUMPTION][R-CLD-01] Implement Hybrid Delta-Event Sourcing Architecture for 40-65% memory efficiency
+    * > [ASSUMPTION][R-GMN-01] Use scaled int64 arithmetic in hot path instead of Decimal128
+    * > [ASSUMPTION][R-CLD-02] Implement memory-mapped processing for 13x I/O improvement
+    * > [ASSUMPTION][R-CLD-04] Add manual GC control for 20-40% pause time reduction
+    * **Performance Validation**: Benchmark all optimizations against baseline
 * **Story 2.2: Implement Stateful Event Replayer & Schema Normalization:** Develop the Chronological Event Replay algorithm as defined in the research:
     * Build stateful replayer that maintains market state in memory
+    * > [ASSUMPTION][R-OAI-01] Implement pending queue pattern for atomic snapshot/transaction handling
+    * > [ASSUMPTION][R-GMN-04] Use hybrid data structure: contiguous arrays for top-of-book, hash maps for deep book
     * Initialize order book from first snapshot encountered
     * Apply trade events to update book state (liquidity consumption)
     * Use periodic snapshots for validation and drift measurement
@@ -67,6 +75,8 @@ The work is structured into four logical epics, with Epic 0 (Data Acquisition) a
     * Transform events into Unified Market Event Schema with proper nullable fields
     * Track and report book drift metrics for quality assurance
 * **Story 2.3: Implement Data Sink:** Write the final stage of the pipeline, which saves the processed unified event stream into partitioned Parquet files with decimal128(38,18) precision for price/quantity fields, optimized for efficient reading by the backtesting environment.
+* **Story 2.4: Multi-Symbol Architecture:** > [ASSUMPTION][R-GMN-02] Implement single-process per symbol architecture to avoid Python GIL contention. Design message routing and process management for multi-asset support.
+* **Story 2.5: Checkpointing & Recovery:** > [ASSUMPTION][R-OAI-03] Implement copy-on-write checkpointing for non-blocking state persistence. Enable fast recovery and resume from any point in the data stream.
 
 ## **Epic 3: Automated Fidelity Validation & Reporting**
 
@@ -76,10 +86,17 @@ The work is structured into four logical epics, with Epic 0 (Data Acquisition) a
 
 * **Story 3.1: Implement Statistical Fidelity Metrics:** Develop a Python library implementing the full Fidelity Validation Metrics Catalogue from the research:
     * **Order Flow Dynamics**: Trade size distributions, inter-event time distributions
+    * > [ASSUMPTION][R-CLD-05] Implement Order Flow Imbalance (OFI) as key price movement predictor
     * **Market State Properties**: Bid-ask spread distributions, top-of-book depth distributions, order book imbalance metrics
+    * > [ASSUMPTION][R-CLD-03] Implement multi-level spread analysis (L1,L5,L10,L15,L20)
     * **Price Return Characteristics**: Volatility clustering (autocorrelation of squared returns), heavy tails of returns (kurtosis > 3)
+    * > [ASSUMPTION][R-GMN-03] Validate power law tails with expected α ∈ [2,5]
+    * > [ASSUMPTION][R-OAI-02] Implement GARCH(1,1) model fitting with 10% parameter tolerance
+    * > [ASSUMPTION][R-OAI-04] Use online computation methods for streaming efficiency
     * Implement Kolmogorov-Smirnov tests for all distribution comparisons
     * Calculate p-values and establish pass/fail thresholds (p > 0.05)
     * Generate visual comparisons (histograms, Q-Q plots, time series)
 * **Story 3.2: Generate Fidelity Report:** Create a script that uses the metrics library from Story 3.1 to generate a standardized "Fidelity Report" in a human-readable format (e.g., Markdown or HTML), including plots and statistical test results.
 * **Story 3.3: Integrate Reporting into Pipeline:** Integrate the Fidelity Report generation into the main pipeline script from Epic 2, so that a report is automatically generated upon the successful processing of any new batch of data.
+    * > [ASSUMPTION][R-GMN-05] Implement comprehensive two-sample K-S test suite with p-value > 0.05 acceptance
+* **Story 3.4: RL-Specific Features:** > [ASSUMPTION][R-CLD-06] Implement queue position estimation and other RL-relevant features for agent training optimization.

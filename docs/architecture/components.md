@@ -1,5 +1,8 @@
 # Components
 
+**Last Updated**: 2025-07-22  
+**Status**: Updated with validated findings from Epic 1 and research insights
+
 The data pipeline will be composed of four primary components, each implemented as a distinct Python module with a clear CLI interface.
 
 ## Component 1: `DataAssessor`
@@ -94,10 +97,15 @@ The data pipeline will be composed of four primary components, each implemented 
       * **Input:** 
         - Path to raw Crypto Lake data (trades, book snapshots, book_delta_v2)
         - Chosen reconstruction strategy: 
-          - `full_event_replay` (preferred): Uses book_delta_v2 for complete microstructure
+          - `full_event_replay` (**SELECTED**): Uses book_delta_v2 for complete microstructure - **validated with 0% gaps**
           - `snapshot_anchored`: Falls back to 100ms snapshots if deltas unavailable
           - `origin_time_sort`: Simple time-based merge if origin_time is reliable
       * **Output:** Processed data conforming to the "Unified Market Event" schema, stored in partitioned Parquet files with decimal128(38,18) precision.
+  * **Performance Enhancements from Research**:
+      * **[ASSUMPTION][R-CLD-01] Hybrid Delta-Event Sourcing**: Claims 40-65% memory reduction
+      * **[ASSUMPTION][R-GMN-01] Scaled Integer Arithmetic**: Use int64 for hot path performance
+      * **[ASSUMPTION][R-ALL-01] Micro-batching**: Process 100-1000 events at a time for vectorization
+      * **[ASSUMPTION][R-GMN-04] Hybrid Data Structure**: Contiguous arrays for top-of-book, hash for deep levels
   * **Chronological Event Replay Algorithm:**
       ```python
       class ChronologicalEventReplay:
@@ -154,10 +162,12 @@ The data pipeline will be composed of four primary components, each implemented 
       * **Stateful Order Book Engine**: Maintains full L2 book state with bounded memory (top 20 levels)
       * **Drift Tracking**: Quantifies information loss between snapshots
       * **Liquidity Consumption Modeling**: Trades properly reduce book liquidity
-      * **Sequence Gap Detection**: Monitors update_id continuity, recovers from snapshots on gaps
+      * **Sequence Gap Detection**: Monitors update_id continuity - **0% gaps validated in Epic 1**
       * **Write-Ahead Log (WAL)**: Ensures crash recovery without data corruption
       * **Streaming Mode**: Processes data in chunks if memory constraints are exceeded
       * **Monotonic Ordering**: Ensures update_id ordering within same timestamp
+      * **[ASSUMPTION][R-OAI-01] Pending Queue Pattern**: Atomic updates during snapshots
+      * **[ASSUMPTION][R-OAI-03] Copy-on-Write Checkpointing**: Non-blocking state persistence
   * **Dependencies:** Relies on the analysis report from `DataAssessor` to select its operational strategy.
   * **Technology Stack:** Python, Polars, PyArrow (for decimal types or int64 pips fallback), Parquet (for simple WAL segments - avoiding RocksDB C++ dependency).
   * **Implementation Notes:**
@@ -203,7 +213,8 @@ The data pipeline will be composed of four primary components, each implemented 
               metrics['trade_size'] = self.compare_distributions(
                   reconstructed.filter(pl.col('event_type')=='TRADE')['trade_quantity'],
                   golden.filter(golden['event_type']=='trade')['quantity'],
-                  metric_name="Trade Size Distribution"
+                  metric_name="Trade Size Distribution",
+                  expected_property="[ASSUMPTION][R-GMN-03] Power law with tail index α ∈ [2,5]"
               )
               
               metrics['inter_event_time'] = self.analyze_event_clustering(
@@ -214,17 +225,20 @@ The data pipeline will be composed of four primary components, each implemented 
               # Market State Properties  
               metrics['spread'] = self.analyze_spread_dynamics(
                   self.calculate_spreads(reconstructed),
-                  self.calculate_spreads(golden)
+                  self.calculate_spreads(golden),
+                  expected_property="[ASSUMPTION][R-CLD-03] Multi-level spread tracking L1,L5,L10,L15,L20"
               )
               
               metrics['book_imbalance'] = self.calculate_order_book_imbalance(
-                  reconstructed, golden, levels=5
+                  reconstructed, golden, levels=5,
+                  expected_property="[ASSUMPTION][R-CLD-05] Order Flow Imbalance as price predictor"
               )
               
               # Price Return Characteristics
               metrics['volatility_clustering'] = self.test_volatility_clustering(
                   self.calculate_returns(reconstructed),
-                  self.calculate_returns(golden)
+                  self.calculate_returns(golden),
+                  expected_property="[ASSUMPTION][R-OAI-02] GARCH(1,1) parameters within 10%"
               )
               
               metrics['return_kurtosis'] = self.validate_heavy_tails(
@@ -271,6 +285,9 @@ The data pipeline will be composed of four primary components, each implemented 
       * **Pass/Fail Threshold**: Average p-value > 0.05 indicates distributions are statistically similar
       * **Heavy Tail Validation**: Kurtosis must be significantly > 3 to confirm fat tails
       * **Drift Analysis**: Track mean squared error between simulated and snapshot books over time
+      * **[ASSUMPTION][R-GMN-05] Two-Sample K-S Tests**: Primary validation tool with p-value > 0.05
+      * **[ASSUMPTION][R-OAI-04] Online Metric Computation**: Streaming calculation for efficiency
+      * **[ASSUMPTION][R-CLD-06] Queue Position Feature**: Track for RL agent training
 
 ## Component Diagram
 

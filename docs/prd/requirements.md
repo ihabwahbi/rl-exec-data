@@ -28,11 +28,15 @@
         * Kolmogorov-Smirnov tests on trade size, inter-event time, and bid-ask spread distributions
         * Anderson-Darling test for order size distributions
         * Power law validation for trade sizes (exponent 2.4±0.1)
+        * > [ASSUMPTION][R-GMN-03] Power law tail validation for returns with α ∈ [2,5]
     * **Microstructure Metrics**:
         * Sequence gap detection and count in order book updates
         * Best bid/ask price RMSE vs golden sample
         * Order book depth correlation at each price level
         * Spread dynamics and mean reversion characteristics
+        * > [ASSUMPTION][R-CLD-03] Multi-level spread analysis (L1,L5,L10,L15,L20)
+        * > [ASSUMPTION][R-CLD-05] Order Flow Imbalance (OFI) distribution validation
+        * > [ASSUMPTION][R-OAI-02] GARCH(1,1) volatility clustering parameters within 10%
     * **Execution Quality Metrics**:
         * Fill rate accuracy within 5% of historical
         * Slippage estimation with R² > 0.8 vs actual market impact
@@ -46,4 +50,6 @@
 * **NFR4: Configurability:** The pipeline must be configurable to run for different symbols and date ranges without code changes.
 * **NFR5: Security:** The pipeline must strip API keys and credentials from all logs. WebSocket capture data must be stored with encryption at rest. No sensitive exchange credentials should be committed to version control.
 * **NFR6: Throughput Performance:** The pipeline must sustain ≥100,000 unified events/second throughput on the target hardware (Beelink SER9) to process 8M delta events per hour within the 24-hour SLA for one month of data.
+    * > [ASSUMPTION][R-ALL-01] Achieve via micro-batching (100-1000 events) for Polars vectorization
+    * > [ASSUMPTION][R-GMN-01] Use scaled int64 arithmetic in performance-critical paths
 * **NFR7: Data Retention Policy:** Unencrypted golden sample data must not persist in RAM longer than active processing time. Implement secure memory wiping after use. Encrypted data retention: 90 days for validation replay, then secure deletion with audit log.

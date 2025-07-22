@@ -1,7 +1,7 @@
 # Data Models
 
-**Last Updated**: 2025-07-19  
-**Status**: Updated with actual Crypto Lake schema from Epic 0
+**Last Updated**: 2025-07-22  
+**Status**: Updated with validated schemas from Epic 0 and Epic 1 completion
 
 The pipeline handles three primary input schemas from Crypto Lake (validated during Epic 0 implementation) and one unified output schema for the backtesting environment.
 
@@ -23,17 +23,21 @@ The pipeline handles three primary input schemas from Crypto Lake (validated dur
 Based on Epic 0 validation, the `book` table provides L2 order book snapshots.
 
 **Core Columns** (validated in Epic 0):
-- `origin_time`: int64 (nanoseconds) - Exchange timestamp
+- `origin_time`: int64 (nanoseconds) - Exchange timestamp - **100% reliable** (Story 1.1)
 - `timestamp`: int64 - Collection timestamp
 - `symbol`: string - Trading pair (e.g., "BTC-USDT")
 - `exchange`: string - Source exchange ("binance")
 
-**Market Data Columns**:
-- Wide format with bid/ask levels (e.g., `bid_0_price`, `bid_0_size`)
-- Up to 20 levels each side
-- Additional metadata columns may be present
+**Market Data Columns** (wide format):
+- `bid_0_price` through `bid_19_price`: float64 (to be stored as decimal128)
+- `bid_0_size` through `bid_19_size`: float64 (to be stored as decimal128)
+- `ask_0_price` through `ask_19_price`: float64 (to be stored as decimal128)
+- `ask_0_size` through `ask_19_size`: float64 (to be stored as decimal128)
 
-**Note**: Exact column structure for bid/ask levels to be confirmed in Story 1.1 analysis.
+**Data Characteristics** (from Epic 0):
+- Available: 2M book snapshots for BTC-USDT
+- Update frequency: ~100ms intervals
+- All numeric values positive and within expected ranges
 
 ## Input Schema 2: Crypto Lake Trades Data
 
@@ -57,13 +61,13 @@ Validated schema from Epic 0 implementation for the `trades` table.
 - All numeric values positive and within expected ranges
 ```
 
-## Input Schema 3: Crypto Lake Book Delta v2 Data
+## Input Schema 3: Crypto Lake Book Delta v2 Data (VALIDATED)
 
-The `book_delta_v2` table provides differential order book updates (to be validated in Story 1.2.5).
+The `book_delta_v2` table provides differential order book updates - **validated with perfect quality in Story 1.2.5**.
 
-**Expected Schema** (from Epic 0 validator):
+**Validated Schema** (from Epic 1):
 - `origin_time`: int64 (nanoseconds) - Exchange timestamp
-- `update_id`: int64 - Monotonic sequence number
+- `update_id`: int64 - Monotonic sequence number - **0% gaps validated**
 - `price`: float64 - Price level (to be stored as decimal128)
 - `new_quantity`: float64 - New quantity at level (0 = remove)
 - `side`: string - Update side ('bid' or 'ask')
@@ -74,9 +78,12 @@ The `book_delta_v2` table provides differential order book updates (to be valida
 - `exchange`: string - Source exchange
 - `side_is_bid`: boolean - Alternative side representation
 
-**Data Volume** (from Epic 0):
+**Data Quality** (validated in Story 1.2.5):
 - 102M rows available for BTC-USDT
-- Critical for market microstructure capture
+- **0% sequence gaps** across all 11.15M golden sample messages
+- Perfect update_id monotonicity in all market regimes
+- Processing performance: ~336K messages/second
+- Enables FullReconstruction strategy for maximum fidelity
 
 **Critical Notes**:
 - `update_id` must be processed in monotonic order to maintain book integrity
