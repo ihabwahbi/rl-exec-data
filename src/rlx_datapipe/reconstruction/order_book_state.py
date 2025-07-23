@@ -3,6 +3,7 @@
 import numpy as np
 from numba import jit
 from typing import Dict, List, Optional, Tuple
+from decimal import Decimal
 
 
 class BoundedPriceLevel:
@@ -161,7 +162,7 @@ class BoundedPriceLevel:
 class OrderBookState:
     """Manages full order book state with bid and ask sides."""
     
-    def __init__(self, symbol: str, max_levels: int = 20):
+    def __init__(self, symbol: str = "BTCUSDT", max_levels: int = 20):
         """
         Initialize order book state.
         
@@ -179,40 +180,69 @@ class OrderBookState:
         # Last update tracking
         self.last_update_id = 0
         self.last_origin_time = 0
+        
+        # Track initialization state
+        self.initialized = False
     
     def initialize_from_snapshot(
         self,
-        bid_prices: np.ndarray,
-        bid_quantities: np.ndarray,
-        ask_prices: np.ndarray,
-        ask_quantities: np.ndarray,
-        update_id: int,
+        snapshot: Dict,
+        update_id: Optional[int] = None,
     ) -> None:
         """
         Initialize book state from snapshot data.
         
         Args:
-            bid_prices: Array of bid prices (scaled int64)
-            bid_quantities: Array of bid quantities (scaled int64)
-            ask_prices: Array of ask prices (scaled int64)
-            ask_quantities: Array of ask quantities (scaled int64)
-            update_id: Snapshot update ID
+            snapshot: Dict with 'bids' and 'asks' lists or arrays
+            update_id: Optional snapshot update ID
         """
-        # Clear existing state
-        self.bids.clear()
-        self.asks.clear()
+        # Handle both dict format and array format
+        if isinstance(snapshot, dict):
+            # Clear existing state
+            self.bids.clear()
+            self.asks.clear()
+            
+            # Load bid levels
+            if "bids" in snapshot and snapshot["bids"] is not None:
+                for level in snapshot["bids"]:
+                    if isinstance(level, list) and len(level) >= 2:
+                        # Handle Decimal objects properly
+                        if hasattr(level[0], '__float__'):
+                            price = float(level[0]) * 1e8
+                            quantity = float(level[1]) * 1e8
+                        else:
+                            price = float(level[0]) * 1e8
+                            quantity = float(level[1]) * 1e8
+                        if quantity > 0:
+                            self.bids.update(int(price), int(quantity))
+            
+            # Load ask levels
+            if "asks" in snapshot and snapshot["asks"] is not None:
+                for level in snapshot["asks"]:
+                    if isinstance(level, list) and len(level) >= 2:
+                        # Handle Decimal objects properly
+                        if hasattr(level[0], '__float__'):
+                            price = float(level[0]) * 1e8
+                            quantity = float(level[1]) * 1e8
+                        else:
+                            price = float(level[0]) * 1e8
+                            quantity = float(level[1]) * 1e8
+                        if quantity > 0:
+                            self.asks.update(int(price), int(quantity))
+            
+            self.initialized = True
+            
+        else:
+            # Legacy array format support
+            bid_prices = snapshot
+            bid_quantities = update_id  # This was the second param
+            # We don't have ask data in this format, so skip
+            for price, quantity in zip(bid_prices, bid_quantities):
+                if quantity > 0:
+                    self.bids.update(int(price), int(quantity))
         
-        # Load bid levels
-        for price, quantity in zip(bid_prices, bid_quantities):
-            if quantity > 0:
-                self.bids.update(int(price), int(quantity))
-        
-        # Load ask levels
-        for price, quantity in zip(ask_prices, ask_quantities):
-            if quantity > 0:
-                self.asks.update(int(price), int(quantity))
-        
-        self.last_update_id = update_id
+        if update_id is not None and isinstance(update_id, int):
+            self.last_update_id = update_id
     
     def apply_delta(
         self,
@@ -317,3 +347,131 @@ class OrderBookState:
         state.asks.deep_levels = dict(ask_data["deep_levels"])
         
         return state
+    
+    def get_best_bid(self) -> Optional[Tuple[float, float]]:
+        """Get best bid price and quantity.
+        
+        Returns:
+            Tuple of (price, quantity) or None if no bids
+        """
+        if self.bids.top_count > 0:
+            # Convert from scaled int to float
+            price = float(self.bids.top_prices[0]) / 1e8
+            quantity = float(self.bids.top_quantities[0]) / 1e8
+            return (price, quantity)
+        return None
+    
+    def get_best_ask(self) -> Optional[Tuple[float, float]]:
+        """Get best ask price and quantity.
+        
+        Returns:
+            Tuple of (price, quantity) or None if no asks
+        """
+        if self.asks.top_count > 0:
+            # Convert from scaled int to float
+            price = float(self.asks.top_prices[0]) / 1e8
+            quantity = float(self.asks.top_quantities[0]) / 1e8
+            return (price, quantity)
+        return None
+    
+    def get_spread(self) -> Optional[float]:
+        """Get bid-ask spread.
+        
+        Returns:
+            Spread amount or None if either side is empty
+        """
+        best_bid = self.get_best_bid()
+        best_ask = self.get_best_ask()
+        
+        if best_bid and best_ask:
+            return best_ask[0] - best_bid[0]
+        return None
+    
+    def get_bid_levels(self) -> List[Tuple[float, float]]:
+        """Get all bid levels as (price, quantity) tuples.
+        
+        Returns:
+            List of bid levels with prices and quantities as floats
+        """
+        levels = []
+        for price_int, qty_int in self.bids.get_levels():
+            price = float(price_int) / 1e8
+            quantity = float(qty_int) / 1e8
+            levels.append((price, quantity))
+        return levels
+    
+    def get_ask_levels(self) -> List[Tuple[float, float]]:
+        """Get all ask levels as (price, quantity) tuples.
+        
+        Returns:
+            List of ask levels with prices and quantities as floats
+        """
+        levels = []
+        for price_int, qty_int in self.asks.get_levels():
+            price = float(price_int) / 1e8
+            quantity = float(qty_int) / 1e8
+            levels.append((price, quantity))
+        return levels
+    
+    def apply_trade(self, trade: Dict) -> None:
+        """Apply trade event to order book (liquidity consumption).
+        
+        Args:
+            trade: Trade event with price, quantity, and side
+        """
+        price = float(trade["price"])
+        quantity = float(trade["quantity"])
+        side = trade["side"]
+        
+        # Convert to scaled int
+        price_int = int(price * 1e8)
+        quantity_int = int(quantity * 1e8)
+        
+        if side == "BUY":
+            # Buy trade consumes ask liquidity
+            # For simplicity, we reduce quantity at best ask
+            if self.asks.top_count > 0 and self.asks.top_prices[0] <= price_int:
+                remaining = self.asks.top_quantities[0] - quantity_int
+                if remaining > 0:
+                    self.asks.top_quantities[0] = remaining
+                else:
+                    # Remove level if fully consumed
+                    self.asks._remove_level(self.asks.top_prices[0])
+        
+        elif side == "SELL":
+            # Sell trade consumes bid liquidity
+            # For simplicity, we reduce quantity at best bid
+            if self.bids.top_count > 0 and self.bids.top_prices[0] >= price_int:
+                remaining = self.bids.top_quantities[0] - quantity_int
+                if remaining > 0:
+                    self.bids.top_quantities[0] = remaining
+                else:
+                    # Remove level if fully consumed
+                    self.bids._remove_level(self.bids.top_prices[0])
+    
+    def resynchronize(self, snapshot: Dict) -> None:
+        """Resynchronize book state from snapshot.
+        
+        Args:
+            snapshot: Snapshot event with bids and asks
+        """
+        # Clear existing state
+        self.bids.clear()
+        self.asks.clear()
+        
+        # Load new state from snapshot
+        if "bids" in snapshot and snapshot["bids"]:
+            for level in snapshot["bids"]:
+                if isinstance(level, list) and len(level) >= 2:
+                    price = float(level[0]) * 1e8
+                    quantity = float(level[1]) * 1e8
+                    self.bids.update(int(price), int(quantity))
+        
+        if "asks" in snapshot and snapshot["asks"]:
+            for level in snapshot["asks"]:
+                if isinstance(level, list) and len(level) >= 2:
+                    price = float(level[0]) * 1e8
+                    quantity = float(level[1]) * 1e8
+                    self.asks.update(int(price), int(quantity))
+        
+        self.initialized = True

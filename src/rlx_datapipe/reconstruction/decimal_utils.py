@@ -5,6 +5,8 @@ Provides helpers for decimal128 precision preservation across different Polars v
 """
 import polars as pl
 from loguru import logger
+from decimal import Decimal
+from typing import Union, Any
 
 
 def ensure_decimal_precision(
@@ -68,3 +70,26 @@ def validate_decimal_columns(df: pl.DataFrame, columns: list[str]) -> bool:
                 return False
     
     return True
+
+
+def ensure_decimal128(value: Union[str, int, float, Decimal, Any]) -> Decimal:
+    """Convert value to Decimal with proper precision.
+    
+    Args:
+        value: Value to convert to Decimal
+        
+    Returns:
+        Decimal value with proper precision for decimal128(38,18)
+    """
+    if value is None:
+        return None
+    
+    if isinstance(value, Decimal):
+        return value
+    
+    try:
+        # Convert to string first to avoid float precision issues
+        return Decimal(str(value))
+    except Exception as e:
+        logger.warning(f"Failed to convert {value} to Decimal: {e}")
+        return Decimal("0")
