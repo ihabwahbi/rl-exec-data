@@ -2,6 +2,12 @@
 
 ## Functional Requirements (FR)
 
+### Implemented Features Not Originally Documented
+* **WAL (Write-Ahead Logging):** Implemented for crash recovery and data durability. Ensures no data loss during pipeline failures.
+* **Memory-Mapped Processing:** Implemented for performance optimization in data loading and processing.
+* **Drift Tracking Metrics:** Implemented to monitor and track reconstruction accuracy drift over time.
+* **Pipeline State Provider:** Interface abstraction pattern implemented for flexible state management.
+
 * **FR0: Data Acquisition (BLOCKING PREREQUISITE):** The project must establish and maintain access to actual Crypto Lake historical data before any validation or pipeline development can begin. This includes:
     * Secure API access and authentication to Crypto Lake
     * Successful download and verification of at least 1-2 weeks of BTC-USDT `trades` and `book` data
@@ -23,7 +29,7 @@
     * *If `origin_time` is reliable for all events and deltas unavailable:* The primary sort key will be `origin_time`.
     * *If `origin_time` is unreliable for book snapshots:* The pipeline will use the "snapshot-anchored" method, using snapshot timestamps as the primary clock and injecting trades into their respective 100ms windows.
 * **FR5: Schema Conformation:** The pipeline's final output must conform to the agreed-upon **Unified Market Event Schema**, which includes event type, timestamp, and event-specific data fields (trade price/qty or book state).
-* **FR6: Automated Fidelity Reporting:** The pipeline must generate a "Fidelity Report" that quantitatively compares the statistical properties of the reconstructed **actual** historical data stream against the "golden sample" of live data (minimum 24 hours capture). **PREREQUISITE**: Both actual historical data processing and live data capture must be completed before fidelity comparison. This report must include:
+* **FR6: Automated Fidelity Reporting [PARTIALLY COMPLETE - Foundation Only]:** The pipeline must generate a "Fidelity Report" that quantitatively compares the statistical properties of the reconstructed **actual** historical data stream against the "golden sample" of live data (minimum 24 hours capture). **STATUS**: Validation framework exists but FidelityReporter component not implemented. **EPIC 3 DEPENDENCY**: Full implementation required. **PREREQUISITE**: Both actual historical data processing and live data capture must be completed before fidelity comparison. This report must include:
     * **Distributional Tests** (from research):
         * Kolmogorov-Smirnov tests on trade size, inter-event time, and bid-ask spread distributions
         * Anderson-Darling test for order size distributions
@@ -49,7 +55,23 @@
 * **NFR3: Performance:** The pipeline must be capable of processing one month of historical BTC-USDT data on the target hardware (Beelink SER9 with 32GB RAM) within a 24-hour period. Memory usage must not exceed 28GB to allow for OS overhead. If delta feeds require more memory, implement streaming chunked processing.
 * **NFR4: Configurability:** The pipeline must be configurable to run for different symbols and date ranges without code changes.
 * **NFR5: Security:** The pipeline must strip API keys and credentials from all logs. WebSocket capture data must be stored with encryption at rest. No sensitive exchange credentials should be committed to version control.
-* **NFR6: Throughput Performance:** The pipeline must sustain ≥100,000 unified events/second throughput on the target hardware (Beelink SER9) to process 8M delta events per hour within the 24-hour SLA for one month of data.
-    * > [ASSUMPTION][R-ALL-01] Achieve via micro-batching (100-1000 events) for Polars vectorization
-    * > [ASSUMPTION][R-GMN-01] Use scaled int64 arithmetic in performance-critical paths
-* **NFR7: Data Retention Policy:** Unencrypted golden sample data must not persist in RAM longer than active processing time. Implement secure memory wiping after use. Encrypted data retention: 90 days for validation replay, then secure deletion with audit log.
+* **NFR6: Throughput Performance [EXCEEDED]:** The pipeline must sustain ≥100,000 unified events/second throughput on the target hardware (Beelink SER9) to process 8M delta events per hour within the 24-hour SLA for one month of data.
+    * **ACHIEVED**: 345,000 messages/second (3.45x requirement)
+    * **Memory Usage**: 1.67GB for 8M events (well under 28GB limit)
+    * **Checkpoint Overhead**: <1% performance impact verified
+    * > [ASSUMPTION][R-ALL-01] Achieve via micro-batching (100-1000 events) for Polars vectorization ✅ VERIFIED
+    * > [ASSUMPTION][R-GMN-01] Use scaled int64 arithmetic in performance-critical paths ✅ VERIFIED
+* **NFR7: Data Retention Policy [NOT IMPLEMENTED]:** Unencrypted golden sample data must not persist in RAM longer than active processing time. Implement secure memory wiping after use. Encrypted data retention: 90 days for validation replay, then secure deletion with audit log. **STATUS**: Not implemented or verified in current codebase. **ACTION**: Create explicit story for implementation or remove from requirements.
+
+## Research Assumptions Verification Status
+
+### VERIFIED ✅
+* **[R-GMN-01]** Scaled Integer Arithmetic - Implemented and performance validated
+* **[R-OAI-01]** Pending Queue Pattern - Implemented in streaming architecture  
+* **[R-ALL-01]** Micro-batching - Implemented with 100-1000 event batches
+
+### NOT VERIFIED ❌
+* **[R-CLD-01]** Hybrid Delta-Event Sourcing - 40-65% memory reduction not measured
+* **[R-CLD-03]** Multi-Level Spread Analysis - Not implemented
+* **[R-GMN-03]** Power Law Tail Validation - Not implemented
+* **[R-OAI-02]** GARCH Volatility Clustering - Not implemented

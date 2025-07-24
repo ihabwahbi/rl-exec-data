@@ -82,6 +82,17 @@ The RLX Data Pipeline project has achieved significant milestones with Epic 0 an
 
 ### Epic 3: Fidelity Reporting 🟢 **READY TO START**
 
+**CRITICAL FINDING**: FidelityReporter component is 0% implemented. Only validation framework foundation exists.
+
+**New Stories Required**:
+- **Story 3.0**: FidelityReporter Foundation (NEW - blocking)
+- **Story 3.1a**: Core Microstructure Metrics (replaces part of 3.1)
+- **Story 3.1b**: Statistical Distribution Metrics (replaces part of 3.1)
+- **Story 3.2**: Generate Fidelity Reports (original)
+- **Story 3.3**: Pipeline Integration (original)
+- **Story 3.4**: RL-Specific Features (original)
+- **Story 3.5**: Research Validation Suite (NEW)
+
 All prerequisites met with Epic 2 completion. Ready to implement automated fidelity validation and reporting based on the reconstruction pipeline.
 
 ## Lessons Learned from Story 1.2
@@ -130,6 +141,7 @@ Epic 3: [                    ] 0%   🟢 READY TO START
 | Decimal128 issues | Medium | ✅ RESOLVED | Validated viable with no performance impact |
 | Golden sample quality | High | ✅ RESOLVED | 11.15M messages with <0.01% gaps |
 | Validation framework | Medium | ✅ RESOLVED | 91% test coverage, production-ready |
+| FidelityReporter missing | High | 🔴 NEW RISK | Epic 3 scope increased ~2x, Story 3.0 added |
 
 ## Critical Decisions Made
 

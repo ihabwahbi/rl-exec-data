@@ -19,7 +19,13 @@ The architecture has evolved through several critical phases:
 
 1. **Initial Design (v1.0-v1.3)**: Theoretical architecture based on assumptions
 2. **Data-First Revision (v1.4)**: Recognized need for real data before validation
-3. **Current State**: Epic 0 complete, architecture validated with real data
+3. **Current State**: Epic 2 complete, performance validated at 345K msg/s (3.45x requirement)
+
+### Performance Achievements
+- **Throughput**: 345K messages/second (vs 100K requirement)
+- **Memory Usage**: 1.67GB for 8M events (14x safety margin)
+- **Checkpoint Overhead**: <1% (exceeds <5% requirement)
+- **I/O Performance**: 3.07GB/s write, 7.75GB/s read (20x requirement)
 
 ### Key Learnings from Epic 0
 
@@ -122,10 +128,12 @@ The architecture has evolved through several critical phases:
 - **Performance**: 336-345K messages/second throughput achieved
 - **Features**: FullReconstruction strategy with 0% sequence gaps
 
-### 6. FidelityReporter 🟢 READY TO IMPLEMENT
+### 6. FidelityReporter ❌ NOT IMPLEMENTED
 - **Purpose**: Validate reconstruction quality
-- **Status**: Core capabilities built in ValidationFramework
-- **Next**: Extend for Epic 3 automated reporting with full metrics catalogue
+- **Status**: 0% implemented - only ValidationFramework exists
+- **Reality**: No FidelityReporter component exists, must be built from scratch
+- **Impact**: Critical blocker for Epic 3 - represents significant unplanned work
+- **Required**: Complete component with metric plugins, reporting, and visualization
 
 ## Technical Architecture Decisions
 
@@ -245,20 +253,64 @@ Epic 2 has been successfully implemented with all architectural patterns validat
 - **Multi-Symbol**: Process isolation avoiding Python GIL
 - **Checkpointing**: Non-blocking persistence with crash recovery
 
-### Technical Debt Acknowledged
-- Simplified trade matching logic (functional but could be enhanced)
-- Row-based DataFrame iteration (could be optimized with vectorization)
-- Some Polars decimal128 limitations worked around
+### Technical Debt Registry
+
+**Documented Technical Debt**:
+1. **Trade Matching Logic**
+   - Current: Simplified implementation without partial fills
+   - Impact: Medium - May need enhancement for real trading
+   - Effort: 2-3 days to implement full matching
+
+2. **Decimal Precision Handling**
+   - Current: Polars 0.20.31 decimal128 workarounds in place
+   - Impact: Low - Functional but verbose code
+   - Resolution: Wait for Polars library updates
+
+3. **Row Iteration Performance**
+   - Current: DataFrame iteration could use vectorization
+   - Impact: Low - Performance still exceeds requirements
+   - Effort: 1-2 days optimization if needed
+
+4. **Error Recovery Patterns**
+   - Current: Basic retry logic implemented
+   - Impact: Medium - Adequate for POC, needs production hardening
+   - Effort: 3-5 days for comprehensive error handling
+
+### Multi-Symbol Architecture Pattern
+
+**Process-per-Symbol Design Implemented**:
+- **Pattern**: Each symbol runs in isolated process
+- **Benefits**:
+  - GIL avoidance for true parallelism
+  - Fault isolation (symbol crash doesn't affect others)
+  - Linear scaling with symbol count
+  - Memory bounded per symbol
+- **Components**:
+  - ProcessManager: Lifecycle and health monitoring
+  - SymbolRouter: Message distribution with backpressure
+  - SymbolWorker: Isolated pipeline execution
 
 ## Epic 3 Architecture Guidance
 
-### Building on Epic 2 Foundation
-With the reconstruction pipeline complete, Epic 3 can focus on comprehensive fidelity validation:
+### Critical Architecture Updates Required
 
-1. **Leverage ValidationFramework**: Extend existing K-S tests and validators
-2. **Use Reconstruction Output**: Parquet files ready for statistical analysis
-3. **Compare with Golden Samples**: 11.15M messages provide comprehensive baseline
-4. **Automated Reporting**: Build on existing report generation patterns
+**⚠️ FidelityReporter Component Missing**: Review reveals FidelityReporter is 0% implemented - only validation framework exists. This is a critical blocker for Epic 3.
+
+### Building on Epic 2 Foundation
+With the reconstruction pipeline complete, Epic 3 requires significant new development:
+
+1. **Build FidelityReporter from Scratch**: No existing implementation, need full component
+2. **Implement 60% Missing Metrics**: Most microstructure and statistical metrics not built
+3. **Create Visual Reporting**: Charts and dashboards not implemented
+4. **Validate Research Claims**: Measure actual vs theoretical benefits
+
+### Undocumented Patterns Discovered
+The following patterns were implemented in Epic 2 but not documented:
+- **WAL (Write-Ahead Logging)**: Crash recovery mechanism
+- **Memory-Mapped I/O**: Performance optimization for file operations
+- **Pipeline State Provider**: Interface abstraction pattern
+- **Drift Tracking**: Continuous accuracy monitoring
+- **Multi-Symbol Architecture**: Process-per-symbol for GIL avoidance
 
 ## Next Architecture Updates
 

@@ -45,10 +45,63 @@ This matrix maps valuable insights from the research phase to their impact on th
 | **Online Metric Computation** | | | Streaming calculation efficiency | Validation: Compare vs batch computation |
 | R-ALL-03 | All 3 | Technical Assumptions | [ASSUMPTION] | Epic 2 general | HIGH |
 | **100k+ events/sec feasible** | | | All cite similar benchmarks | Validation: End-to-end throughput test |
-| R-CLD-06 | Claude | Epic 3 - Features | [ASSUMPTION] | Story 3.4 (new) | LOW |
+| R-CLD-06 | Claude | Epic 3 - Features | [ASSUMPTION] | Story 3.4 (old) | LOW |
 | **Queue Position Feature** | | | For RL agent training | Validation: Feature importance analysis |
 | R-GMN-06 | Gemini | Risk Register | [RISK] | N/A | HIGH |
 | **Polars Decimal128 Instability** | | | API marked unstable, regressions | Mitigation: Int64 fallback ready |
+
+## Epic 3 Advanced Validation Insights (From New Research)
+
+| Insight_ID | Source(s) | Section to Update | Tag | Validation Story/Metric | Priority |
+|------------|-----------|-------------------|-----|------------------------|----------|
+| R-GEM-01 | Gemini | Epic 3 - Story 3.1b | [ASSUMPTION] | Story 3.1b | CRITICAL |
+| **Anderson-Darling Test Superiority** | | | Replaces K-S for tail sensitivity | Validation: Compare p-values on extreme events |
+| R-OAI-06 | OpenAI | Epic 3 - Story 3.1b | [ASSUMPTION] | Story 3.1b | HIGH |
+| **Cramér-von Mises Omnibus Power** | | | Better overall distribution test | Validation: Benchmark vs K-S power |
+| R-CLD-07 | Claude | Epic 3 - Story 3.1b | [ASSUMPTION] | Story 3.1b | CRITICAL |
+| **Energy Distance for Multivariate** | | | True multivariate validation | Validation: Joint state vector testing |
+| R-ALL-04 | All 3 | Epic 3 - Story 3.1b | [ASSUMPTION] | Story 3.1b | CRITICAL |
+| **MMD with Signature Kernels** | | | Captures temporal dependencies | Validation: Volatility clustering detection |
+| R-GEM-02 | Gemini | Epic 3 - Story 3.1a | [ASSUMPTION] | Story 3.1a | HIGH |
+| **Cross-Sectional Dependencies** | | | Bid-ask correlated movements | Validation: Cross-correlation analysis |
+| R-OAI-05 | OpenAI | Epic 3 - Story 3.1a | [ASSUMPTION] | Story 3.1a | HIGH |
+| **Copula-Based Joint Validation** | | | Queue size dependencies | Validation: Empirical copula fitting |
+| R-GEM-03 | Gemini | Epic 3 - Story 3.1c | [ASSUMPTION] | Story 3.1c | HIGH |
+| **Volatility Clustering Validation** | | | Squared return autocorrelation | Validation: ACF comparison |
+| R-CLD-08 | Claude | Epic 3 - Story 3.1c | [ASSUMPTION] | Story 3.1c | HIGH |
+| **Order Flow Clustering** | | | Hawkes process characteristics | Validation: Inter-arrival distributions |
+| R-OAI-07 | OpenAI | Epic 3 - Story 3.1c | [ASSUMPTION] | Story 3.1c | MEDIUM |
+| **Intraday Pattern Preservation** | | | U-shaped volume patterns | Validation: Time-of-day analysis |
+| R-CLD-09 | Claude | Epic 3 - Story 3.1c | [ASSUMPTION] | Story 3.1c | HIGH |
+| **Hausman Test for Noise** | | | Ultra-fast noise detection | Validation: <1μs performance |
+| R-OAI-08 | OpenAI | Epic 3 - Story 3.2 | [ASSUMPTION] | Story 3.2 | HIGH |
+| **Empirical Copula Tests** | | | Price-volume dependencies | Validation: Goodness-of-fit tests |
+| R-GEM-04 | Gemini | Epic 3 - Story 3.2 | [ASSUMPTION] | Story 3.2 | HIGH |
+| **Pesaran CD Test** | | | Cross-sectional dependence | Validation: Order book correlations |
+| R-CLD-10 | Claude | Epic 3 - Story 3.2 | [ASSUMPTION] | Story 3.2 | CRITICAL |
+| **OFI Predictive Power** | | | R² > 0.1 for price prediction | Validation: Regression analysis |
+| R-GEM-05 | Gemini | Epic 3 - Story 3.2 | [ASSUMPTION] | Story 3.2 | MEDIUM |
+| **Hidden Liquidity Validation** | | | Iceberg order detection | Validation: Fill pattern analysis |
+| R-CLD-11 | Claude | Epic 3 - Story 3.3 | [ASSUMPTION] | Story 3.3 | CRITICAL |
+| **State Coverage Requirement** | | | >95% coverage of live states | Validation: Energy distance metric |
+| R-OAI-09 | OpenAI | Epic 3 - Story 3.3 | [ASSUMPTION] | Story 3.3 | CRITICAL |
+| **Reward Distribution Matching** | | | <5% difference across regimes | Validation: P&L distribution tests |
+| R-GEM-06 | Gemini | Epic 3 - Story 3.3 | [ASSUMPTION] | Story 3.3 | CRITICAL |
+| **Sim-to-Real Gap Limit** | | | <5% performance degradation | Validation: Policy backtesting |
+| R-ALL-05 | All 3 | Epic 3 - Story 3.3 | [ASSUMPTION] | Story 3.3 | HIGH |
+| **Multi-Regime Consistency** | | | Performance across volatility | Validation: Regime-specific testing |
+| R-GEM-07 | Gemini | Epic 3 - Story 3.4 | [ASSUMPTION] | Story 3.4 | HIGH |
+| **Spoofing Frequency Preservation** | | | ±20% of golden sample | Validation: ML detection comparison |
+| R-CLD-12 | Claude | Epic 3 - Story 3.4 | [ASSUMPTION] | Story 3.4 | HIGH |
+| **Fleeting Liquidity Distribution** | | | Sub-100ms order lifetimes | Validation: Lifetime histograms |
+| R-OAI-10 | OpenAI | Epic 3 - Story 3.4 | [ASSUMPTION] | Story 3.4 | MEDIUM |
+| **Message Burst Patterns** | | | Quote stuffing preservation | Validation: Rate spike detection |
+| R-GEM-08 | Gemini | Epic 3 - Story 3.5 | [ASSUMPTION] | Story 3.5 | CRITICAL |
+| **Streaming Validation Throughput** | | | 336K+ msg/s capability | Validation: Load testing |
+| R-CLD-13 | Claude | Epic 3 - Story 3.5 | [ASSUMPTION] | Story 3.5 | HIGH |
+| **GPU Acceleration Benefits** | | | 100x speedup for MMD | Validation: Benchmark vs CPU |
+| R-OAI-11 | OpenAI | Epic 3 - Story 3.5 | [ASSUMPTION] | Story 3.5 | HIGH |
+| **Linear Scaling** | | | Distributed architecture | Validation: Multi-node testing |
 
 ## Key Insights Summary
 
@@ -82,11 +135,40 @@ This matrix maps valuable insights from the research phase to their impact on th
 | Circuit Breaker Pattern | Claude | Overengineering for offline pipeline |
 | Multi-exchange Support | Claude | Out of scope |
 
+### Epic 3 Validation Revolution Summary
+
+#### Critical Paradigm Shifts
+1. **K-S Test Replacement**: All three sources emphasize K-S test inadequacy for financial data
+   - Anderson-Darling for tail sensitivity (critical for risk)
+   - Energy Distance for multivariate validation
+   - MMD with signature kernels for temporal patterns
+
+2. **Microstructure Fidelity**: Beyond simple distributions to complex dynamics
+   - Copula methods for non-linear dependencies
+   - Cross-sectional tests for order book correlations
+   - Adversarial pattern preservation (spoofing, fleeting liquidity)
+
+3. **RL-Specific Validation**: New category of metrics entirely
+   - State-action coverage requirements (>95%)
+   - Reward signal preservation across regimes
+   - Sim-to-real gap quantification (<5%)
+
+4. **Performance Architecture**: Three-tier validation system
+   - Tier 1: <1μs streaming tests
+   - Tier 2: <1ms GPU-accelerated tests
+   - Tier 3: <100ms comprehensive analysis
+
+#### Impact on Epic 3
+- Story count increased from 5 to 11 stories
+- Timeline expanded from ~20 days to ~40-45 days
+- Fundamental shift from basic statistical tests to comprehensive validation suite
+- Strong emphasis on preventing catastrophic sim-to-real gaps
+
 ## Next Actions
 
-1. Update Epic 2 stories with new performance assumptions
-2. Create new Story 2.4 for multi-symbol architecture
-3. Create new Story 2.5 for checkpointing mechanism
-4. Create new Story 3.4 for RL-specific features
-5. Update technical-assumptions.md with all [ASSUMPTION] tags
-6. Add Polars Decimal128 risk to risk register
+1. ✅ Update Epic 3 stories with advanced validation framework
+2. ✅ Enhance validation-strategy.md with multi-faceted approach
+3. ✅ Add Epic 3 Advanced Validation Assumptions to technical-assumptions.md
+4. ✅ Update research-impact-matrix.md with new insights
+5. ✅ Add new validation risks to risk register
+6. Create changelog entry documenting all updates

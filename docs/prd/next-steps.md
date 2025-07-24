@@ -1,54 +1,78 @@
 # Next Steps
 
-**Last Updated**: 2025-07-22
+**Last Updated**: 2025-07-24
 
-## Epic 1 Complete - Ready for Epic 2 🚀
+## Epic 2 Complete - Epic 3 Preparation Required 🚀
 
-With Epic 1 **100% complete** and deep research insights integrated, the project is ready to begin Epic 2 with the FullReconstruction strategy enhanced by validated architecture patterns:
+With Epic 2 now **100% complete**, critical gaps have been identified that require immediate attention before Epic 3 can begin:
 
-### 1. Epic 1 Retrospective ✅ COMPLETE
-**All Validations Exceeded Expectations**
-* **Delta Quality**: **0% sequence gaps** in 11.15M messages (perfect quality)
-* **Performance**: 13M events/sec achieved (130x requirement)
+### 1. Critical Findings from Epic 2 Review 🔴
+**FidelityReporter Component Missing**
+* **Status**: 0% implemented (only validation framework exists)
+* **Impact**: Epic 3 scope increased ~2x
+* **Required**: Story 3.0 as blocking prerequisite
+
+### 2. Immediate Actions Required (Before Epic 3)
+**Priority: CRITICAL**
+1. **Update PRD Documentation** ✅ COMPLETE
+   - FR6 marked as "Partially Complete - Foundation Only"
+   - NFR7 marked as "Not Implemented"
+   - Added missing features (WAL, memory-mapped, drift tracking)
+   - Updated performance to achieved 345K msg/s
+
+2. **Design FidelityReporter Architecture**
+   - Define metric plugin interface
+   - Specify aggregation patterns  
+   - Design visual reporting integration
+   - Performance target: <5% overhead
+
+3. **Create New Epic 3 Stories** ✅ COMPLETE
+   - Story 3.0: FidelityReporter Foundation (5 days)
+   - Story 3.1a: Core Microstructure Metrics (3 days)
+   - Story 3.1b: Statistical Distribution Metrics (4 days)
+   - Story 3.5: Research Validation Suite (3 days)
+
+### 3. Epic 2 Achievements Summary ✅
+**Performance Exceeded All Targets**
+* **Throughput**: 345K msg/s (3.45x requirement)
 * **Memory**: 1.67GB for 8M events (14x safety margin)
-* **Strategy Decision**: **GO for FullReconstruction approach**
+* **Checkpoint Overhead**: <1% verified
+* **Multi-Symbol**: Linear scaling achieved
+* **All Stories**: 100% complete and tested
 
-### 2. Begin Epic 2 Story 2.1 - Data Ingestion & Unification
-**Priority: IMMEDIATE**
-* **Implement Delta Feed Parser**: Parse book_delta_v2 data with perfect quality
-* **Build Unified Event Stream**: Merge trades and deltas chronologically
-* **Apply Validated Patterns**: Use streaming architecture from Epic 1
-* **Continuous Validation**: Run ValidationFramework tests at each stage
-* **Timeline**: Start this week
+## Epic 3 Preparation Requirements
 
-### 3. Design Order Book Reconstruction Engine
-**Priority: HIGH**
-* **Stateful Book Maintenance**: Track full order book state in memory
-* **Sequence Validation**: Monitor for gaps (defensive, 0% expected)
-* **Recovery Mechanisms**: Handle edge cases gracefully
-* **Performance Optimization**: Target 100k+ events/sec sustained
-* **Timeline**: Design this week, implement next
+### FidelityReporter Architecture (Required)
+1. **Pluggable Metric System**
+   - MetricPlugin abstract base class
+   - Registry for dynamic metric loading
+   - Streaming and batch computation modes
+   - Memory-efficient windowing
 
-### 4. Leverage Epic 1 Assets
-**Priority: CONTINUOUS**
-* **Golden Samples**: 11.15M messages for continuous validation
-* **ValidationFramework**: 91% test coverage, production-ready
-* **Performance Baselines**: 13M events/sec capability proven
-* **Perfect Data Quality**: 0% gaps enable highest fidelity
+2. **Report Generation Framework**
+   - HTML/PDF generation with templates
+   - Interactive dashboards (Plotly/Dash)
+   - Export formats (JSON, CSV)
+   - Checkpoint integration
 
-## Strategic Recommendations
+3. **Pipeline Integration**
+   - Hook into DataSink component
+   - Performance monitoring (<5% overhead)
+   - Multi-symbol aggregation
+   - State persistence
 
-### Validated Technical Approach
-1. **FullReconstruction Strategy**: ✅ Enabled by perfect delta quality
-2. **Streaming Architecture**: ✅ Proven to handle multi-GB files efficiently
-3. **Decimal128 Precision**: ✅ Validated as primary approach
-4. **Continuous Validation**: ✅ Framework ready with all validators
+### Visual Reporting Requirements
+1. **Charts and Visualizations**
+   - Time series plots for metrics
+   - Distribution comparisons (histograms, Q-Q)
+   - Heatmaps for multi-level spreads
+   - Statistical test results
 
-### Implementation Best Practices
-1. **Raw Data Preservation**: Always preserve exact message formats
-2. **Combined Stream Usage**: Use proper WebSocket endpoints (@depth@100ms)
-3. **Validation-First Development**: Test assumptions before building
-4. **Memory-Bounded Processing**: Stream large datasets, don't load entirely
+2. **Dashboard Features**
+   - Real-time metric updates
+   - Historical comparisons
+   - Alert thresholds
+   - Export capabilities
 
 ### Risk Mitigation
 All major risks have been resolved:
@@ -57,31 +81,41 @@ All major risks have been resolved:
 * ✅ **Memory Constraints**: 14x safety margin
 * ✅ **Data Quality**: Origin time 100% reliable
 
-## Epic 2 Implementation Plan
+## Epic 3 Implementation Plan
 
-### Week 1: Foundation
-1. **Monday-Tuesday**: Epic 2 architecture design based on FullReconstruction
-2. **Wednesday-Thursday**: Implement Story 2.1 delta parser
-3. **Friday**: Validation checkpoint with golden samples
+### Week 1: Foundation (Story 3.0)
+1. **Day 1-2**: Core FidelityReporter infrastructure
+2. **Day 2-3**: Computation engine (streaming/batch)
+3. **Day 3-4**: Report generation framework
+4. **Day 4-5**: Integration testing & performance
 
-### Week 2: Core Engine
-1. **Story 2.1b**: Order book reconstruction engine
-2. **Story 2.2**: Stateful event replayer
-3. **Continuous**: ValidationFramework integration
+### Week 2: Core Metrics (Story 3.1a & 3.1b)
+1. **Day 1-3**: Story 3.1a - Microstructure metrics
+   - Multi-level spreads, OFI, Kyle's Lambda
+2. **Day 4-5**: Story 3.1b - Statistical metrics (start)
+   - Power law validation, GARCH modeling
 
-### Week 3: Production Readiness
-1. **Story 2.3**: Data sink with Parquet output
-2. **Performance optimization**: Ensure 100k+ events/sec
-3. **End-to-end validation**: Full pipeline test
+### Week 3: Advanced Metrics & Integration
+1. **Day 1-2**: Story 3.1b completion
+   - Jump detection, distribution tests
+2. **Day 3-4**: Story 3.2 & 3.3 - Report generation
+3. **Day 5**: Story 3.5 - Research validation
+
+### Week 4: RL Features & Polish
+1. **Story 3.4**: RL-specific features
+2. **Performance optimization**
+3. **Comprehensive testing**
+4. **Documentation and handoff**
 
 ## Success Criteria
 
-### Epic 2 Milestones
-1. ⏸️ Delta parser handles 100M+ book_delta_v2 events
-2. ⏸️ Order book reconstruction matches golden samples >99.9%
-3. ⏸️ Pipeline sustains 100k+ events/sec throughput
-4. ⏸️ Memory usage remains under 24GB for 8M events/hour
-5. ⏸️ All K-S tests pass with p-value > 0.05
+### Epic 3 Milestones
+1. ⏸️ FidelityReporter processes 100K events/sec with <5% overhead
+2. ⏸️ All core metrics match golden samples within 5% tolerance
+3. ⏸️ Statistical tests pass with p-value > 0.05
+4. ⏸️ Research validation quantifies all claimed benefits
+5. ⏸️ Automated reports generated in <30 seconds
+6. ⏸️ RL-specific features integrated and tested
 
 ### Validation Checkpoints
 * After each story: Run ValidationFramework tests
@@ -129,12 +163,34 @@ Based on 0% delta gaps, implement full event replay:
 - Automated fidelity reporting
 - Continuous statistical validation
 
+## Research Assumptions Status Update
+
+### VERIFIED ✅
+* **[R-GMN-01]** Scaled Integer Arithmetic - Implemented and performance validated
+* **[R-OAI-01]** Pending Queue Pattern - Implemented in streaming architecture
+* **[R-ALL-01]** Micro-batching - Implemented with 100-1000 event batches
+
+### NOT VERIFIED ❌
+* **[R-CLD-01]** Hybrid Delta-Event Sourcing - 40-65% memory reduction not measured
+* **[R-CLD-03]** Multi-Level Spread Analysis - Not implemented
+* **[R-GMN-03]** Power Law Tail Validation - Not implemented
+* **[R-OAI-02]** GARCH Volatility Clustering - Not implemented
+
 ## Risk Mitigation Updates
 
-### New Risk Identified
-* **[RISK][R-GMN-06] Polars Decimal128 Instability**: 
-  - **Issue**: Polars marks Decimal type as unstable
-  - **Mitigation**: Implement int64 scaled arithmetic as primary, Decimal128 as fallback
-  - **Validation**: Benchmark both approaches in Story 2.1b
+### Epic 3 Risks
+* **FidelityReporter Missing**: High impact - Story 3.0 added as blocker
+* **Metric Complexity**: Medium impact - Split Story 3.1 into 3.1a/b
+* **Research Validation**: Medium impact - Story 3.5 added
+* **Timeline Extension**: High impact - Epic 3 now 20-25 days vs 10-15
 
-**PROJECT STATUS**: Epic 1 is **100% complete** with exceptional results. Deep research has been integrated with 20 new assumptions properly tagged and tracked. Epic 2 is ready to begin with the FullReconstruction strategy enhanced by industry best practices. All technical risks have been identified with mitigations in place.
+### Technical Risks Resolved ✅
+* **[RISK][R-GMN-06] Polars Decimal128**: Mitigated with int64 approach
+
+**PROJECT STATUS**: Epic 2 is **100% complete** with exceptional engineering quality. However, critical gaps identified:
+- FidelityReporter component: 0% implemented (only validation framework exists)
+- Metric catalogue: 40% implemented (only basic validators)
+- Visual reporting: 0% implemented
+- Research validation: 0% implemented
+
+Epic 3 scope has increased ~2x with 4 new stories added (3.0, 3.1a, 3.1b, 3.5). Re-estimation recommended: 20-25 days vs original 10-15 days.
