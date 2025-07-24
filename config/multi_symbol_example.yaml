@@ -1,0 +1,47 @@
+# Multi-Symbol Pipeline Configuration Example
+
+multi_symbol:
+  enabled: true
+  routing_strategy: direct  # Options: direct, hash, round_robin
+  
+  symbols:
+    - name: BTC-USDT
+      enabled: true
+      memory_limit_mb: 1024
+      cpu_affinity: [0, 1]
+      queue_size: 1000
+      
+    - name: ETH-USDT
+      enabled: true
+      memory_limit_mb: 1024
+      cpu_affinity: [2, 3]
+      queue_size: 1000
+      
+    - name: SOL-USDT
+      enabled: false  # Disabled for now
+      memory_limit_mb: 512
+      cpu_affinity: null
+      queue_size: 500
+      
+  process_manager:
+    health_check_interval_seconds: 5
+    restart_delay_seconds: 2
+    max_restart_attempts: 3
+    shutdown_timeout_seconds: 30
+    
+  monitoring:
+    enable_metrics: true
+    metrics_interval_seconds: 10
+    metrics_export_port: null  # Set to enable metrics endpoint
+
+# Replay optimization settings (per-worker)
+replay_optimization:
+  drift_threshold: 0.001
+  resync_on_drift: true
+  drift_check_interval: 1000
+  max_book_levels: 20
+  micro_batch_size: 1000
+  enable_micro_batching: true
+  gc_interval: 100000
+  enable_gc: true
+  max_memory_mb: 500

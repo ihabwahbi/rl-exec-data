@@ -1,7 +1,8 @@
-"""Configuration for event replay optimizations."""
+"""Configuration for event replay optimizations and multi-symbol processing."""
 
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, List, Dict, Any
+from enum import Enum
 
 
 @dataclass
@@ -98,3 +99,113 @@ class ReplayOptimizationConfig:
         Default settings that balance speed and accuracy.
         """
         return ReplayOptimizationConfig()  # Use defaults
+
+
+class RoutingStrategy(Enum):
+    """Message routing strategies for multi-symbol processing."""
+    DIRECT = "direct"  # Route based on message symbol field
+    HASH = "hash"  # Hash-based distribution
+    ROUND_ROBIN = "round_robin"  # Round-robin distribution
+
+
+@dataclass
+class SymbolConfig:
+    """Configuration for a single symbol."""
+    name: str
+    enabled: bool = True
+    memory_limit_mb: Optional[int] = 1024
+    cpu_affinity: Optional[List[int]] = None
+    queue_size: int = 1000
+
+
+@dataclass
+class ProcessManagerConfig:
+    """Configuration for the process manager."""
+    health_check_interval_seconds: int = 5
+    restart_delay_seconds: int = 2
+    max_restart_attempts: int = 3
+    shutdown_timeout_seconds: int = 30
+
+
+@dataclass
+class MonitoringConfig:
+    """Configuration for monitoring and metrics."""
+    enable_metrics: bool = True
+    metrics_interval_seconds: int = 10
+    metrics_export_port: Optional[int] = None
+
+
+@dataclass
+class MultiSymbolConfig:
+    """Configuration for multi-symbol processing."""
+    enabled: bool = True
+    routing_strategy: RoutingStrategy = RoutingStrategy.DIRECT
+    symbols: List[SymbolConfig] = field(default_factory=list)
+    process_manager: ProcessManagerConfig = field(default_factory=ProcessManagerConfig)
+    monitoring: MonitoringConfig = field(default_factory=MonitoringConfig)
+    
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "MultiSymbolConfig":
+        """Create configuration from dictionary.
+        
+        Args:
+            config_dict: Configuration dictionary
+            
+        Returns:
+            MultiSymbolConfig instance
+        """
+        # Parse routing strategy
+        routing_strategy = RoutingStrategy(config_dict.get('routing_strategy', 'direct'))
+        
+        # Parse symbols
+        symbols = []
+        for symbol_dict in config_dict.get('symbols', []):
+            symbols.append(SymbolConfig(**symbol_dict))
+            
+        # Parse process manager config
+        pm_dict = config_dict.get('process_manager', {})
+        process_manager = ProcessManagerConfig(**pm_dict)
+        
+        # Parse monitoring config
+        mon_dict = config_dict.get('monitoring', {})
+        monitoring = MonitoringConfig(**mon_dict)
+        
+        return cls(
+            enabled=config_dict.get('enabled', True),
+            routing_strategy=routing_strategy,
+            symbols=symbols,
+            process_manager=process_manager,
+            monitoring=monitoring
+        )
+        
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary.
+        
+        Returns:
+            Configuration as dictionary
+        """
+        return {
+            'enabled': self.enabled,
+            'routing_strategy': self.routing_strategy.value,
+            'symbols': [
+                {
+                    'name': s.name,
+                    'enabled': s.enabled,
+                    'memory_limit_mb': s.memory_limit_mb,
+                    'cpu_affinity': s.cpu_affinity,
+                    'queue_size': s.queue_size
+                }
+                for s in self.symbols
+            ],
+            'process_manager': {
+                'health_check_interval_seconds': self.process_manager.health_check_interval_seconds,
+                'restart_delay_seconds': self.process_manager.restart_delay_seconds,
+                'max_restart_attempts': self.process_manager.max_restart_attempts,
+                'shutdown_timeout_seconds': self.process_manager.shutdown_timeout_seconds
+            },
+            'monitoring': {
+                'enable_metrics': self.monitoring.enable_metrics,
+                'metrics_interval_seconds': self.monitoring.metrics_interval_seconds,
+                'metrics_export_port': self.monitoring.metrics_export_port
+            }
+        }
