@@ -391,3 +391,4 @@ class ProcessManager:
         logger.info(f"Removing symbol: {symbol}")
         self.stop_worker(symbol)
         del self.workers[symbol]
+

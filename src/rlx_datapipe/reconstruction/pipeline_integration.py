@@ -5,12 +5,13 @@ Connects event processing output to DataSink input.
 
 import asyncio
 from pathlib import Path
-from typing import Optional, AsyncIterator
+from typing import Optional, AsyncIterator, Tuple, Dict, Any
 import polars as pl
 
 from loguru import logger
 
 from rlx_datapipe.reconstruction.data_sink import DataSink, DataSinkConfig
+from rlx_datapipe.reconstruction.recovery_manager import RecoveryManager
 from rlx_datapipe.reconstruction.unified_market_event import UnifiedMarketEvent
 
 
@@ -118,3 +119,124 @@ async def run_data_sink_with_events(
         logger.error(f"Pipeline processing failed: {e}")
         sink_task.cancel()
         raise
+
+
+async def recover_pipeline_state(
+    checkpoint_dir: Path,
+    symbol: str = "BTCUSDT",
+) -> Tuple[bool, Optional[Dict[str, Any]]]:
+    """Recover pipeline state from checkpoint.
+    
+    Args:
+        checkpoint_dir: Directory containing checkpoints
+        symbol: Trading symbol to recover
+        
+    Returns:
+        Tuple of (recovery_success, recovered_state)
+    """
+    recovery_manager = RecoveryManager(checkpoint_dir, symbol)
+    
+    # Attempt recovery
+    success = await recovery_manager.attempt_recovery()
+    
+    if success:
+        recovery_manager.log_recovery_summary()
+        return True, recovery_manager.get_recovery_state()
+    else:
+        logger.info("Starting fresh (no recovery)")
+        return False, None
+
+
+class RecoverablePipeline:
+    """Pipeline with checkpoint recovery support."""
+    
+    def __init__(
+        self,
+        output_dir: Path,
+        symbol: str = "BTCUSDT",
+        enable_recovery: bool = True,
+    ):
+        """Initialize recoverable pipeline.
+        
+        Args:
+            output_dir: Output directory for data and checkpoints
+            symbol: Trading symbol
+            enable_recovery: Whether to attempt recovery on startup
+        """
+        self.output_dir = Path(output_dir)
+        self.symbol = symbol
+        self.enable_recovery = enable_recovery
+        
+        self.checkpoint_dir = self.output_dir / "checkpoints"
+        self.recovered_state: Optional[Dict[str, Any]] = None
+        self.recovery_successful = False
+        
+    async def initialize(self) -> Tuple[DataSink, asyncio.Queue[UnifiedMarketEvent]]:
+        """Initialize pipeline with optional recovery.
+        
+        Returns:
+            Tuple of (DataSink, event_queue)
+        """
+        # Attempt recovery if enabled
+        if self.enable_recovery and self.checkpoint_dir.exists():
+            self.recovery_successful, self.recovered_state = await recover_pipeline_state(
+                self.checkpoint_dir,
+                self.symbol
+            )
+        
+        # Create data sink pipeline
+        data_sink, event_queue = await create_data_sink_pipeline(
+            output_dir=self.output_dir,
+            symbol=self.symbol,
+        )
+        
+        return data_sink, event_queue
+    
+    def get_resume_position(self) -> Tuple[Optional[str], int]:
+        """Get file and offset to resume from.
+        
+        Returns:
+            Tuple of (filename, offset)
+        """
+        if self.recovered_state:
+            return (
+                self.recovered_state.get("current_file"),
+                self.recovered_state.get("file_offset", 0)
+            )
+        return None, 0
+    
+    def get_last_update_id(self) -> Optional[int]:
+        """Get last processed update ID.
+        
+        Returns:
+            Last update ID or None
+        """
+        if self.recovered_state:
+            return self.recovered_state.get("last_update_id")
+        return None
+    
+    async def validate_continuity(
+        self,
+        first_update_id: int,
+        first_event_time: int,
+    ) -> bool:
+        """Validate data continuity after recovery.
+        
+        Args:
+            first_update_id: First update ID after recovery
+            first_event_time: First event timestamp after recovery
+            
+        Returns:
+            True if continuity is valid
+        """
+        if not self.recovery_successful:
+            return True
+        
+        # Use recovery manager for validation
+        recovery_manager = RecoveryManager(self.checkpoint_dir, self.symbol)
+        recovery_manager.recovered_state = self.recovered_state
+        
+        return await recovery_manager.validate_continuity(
+            first_update_id,
+            first_event_time
+        )

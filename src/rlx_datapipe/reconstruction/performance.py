@@ -173,3 +173,4 @@ class PerformanceBenchmark:
                 logger.info(f"{key}: {value}")
 
         logger.info(f"{'='*60}\n")
+

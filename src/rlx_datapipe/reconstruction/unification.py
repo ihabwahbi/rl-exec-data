@@ -290,3 +290,4 @@ class BatchedDataReader:
     def is_backpressure_active(self) -> bool:
         """Check if backpressure is currently active."""
         return self._backpressure_active
+

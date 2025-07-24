@@ -313,3 +313,4 @@ class DataIngestion:
 # Aliases for backward compatibility
 BookDeltaV2Reader = BookDeltasReader
 BookSnapshotReader = BookSnapshotsReader
+

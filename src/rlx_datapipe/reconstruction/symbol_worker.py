@@ -21,6 +21,7 @@ from loguru import logger
 from .config import ReplayOptimizationConfig, SymbolConfig
 from .data_sink import DataSink
 from .pipeline_integration import create_data_sink_pipeline
+from .pipeline_state_provider import PipelineStateProvider
 from .symbol_router import RoutedMessage
 from .unified_market_event import UnifiedMarketEvent
 from .unified_stream_enhanced import (
@@ -62,6 +63,10 @@ class SymbolWorker:
         self.event_stream: UnifiedEventStreamEnhanced | None = None
         self.data_sink: DataSink | None = None
         self.event_queue: asyncio.Queue | None = None
+        
+        # State provider for unified checkpointing
+        self.state_provider = PipelineStateProvider(symbol)
+        self.checkpoint_manager = None
 
         # Metrics
         self.messages_processed = 0
@@ -110,8 +115,26 @@ class SymbolWorker:
 
         # Start data sink
         await self.data_sink.start()
+        
+        # Initialize checkpoint manager with enhanced features
+        from .checkpoint_manager import CheckpointManager
+        self.checkpoint_manager = CheckpointManager(
+            checkpoint_dir=symbol_output_dir / "checkpoints",
+            symbol=self.symbol,
+            enable_time_trigger=True,
+            time_interval=300.0,  # 5 minutes
+            event_interval=1_000_000,  # 1M events
+        )
+        
+        # Set up state provider references
+        self.state_provider.set_order_book_engine(self.event_stream.order_book_engine)
+        self.state_provider.set_data_sink(self.data_sink)
+        self.checkpoint_manager.set_state_provider(self.state_provider)
+        
+        # Start checkpoint manager
+        await self.checkpoint_manager.start()
 
-        logger.info(f"Pipeline initialized for {self.symbol}")
+        logger.info(f"Pipeline initialized for {self.symbol} with checkpointing enabled")
 
     async def _process_message(self, routed_msg: RoutedMessage) -> None:
         """Process a single message through the pipeline.
@@ -130,6 +153,13 @@ class SymbolWorker:
             for event in unified_events:
                 await self.event_queue.put(event)
                 self.messages_processed += 1
+            
+            # Update state provider
+            self.state_provider.increment_events_processed(len(unified_events))
+            
+            # Record events for checkpoint triggers
+            if self.checkpoint_manager:
+                await self.checkpoint_manager.record_events(len(unified_events))
 
         except Exception as e:
             logger.error(f"Error processing message for {self.symbol}: {e}")
@@ -253,11 +283,6 @@ class SymbolWorker:
                 # Process the message
                 await self._process_message(routed_msg)
 
-                # Periodic checkpoint
-                if time.time() - self.last_checkpoint_time > 60:
-                    await self._checkpoint()
-                    self.last_checkpoint_time = time.time()
-
             except multiprocessing.queues.Empty:
                 # No messages available, continue
                 continue
@@ -266,20 +291,24 @@ class SymbolWorker:
                 self.errors_count += 1
 
     async def _checkpoint(self) -> None:
-        """Perform periodic checkpoint operations."""
+        """Perform manual checkpoint operation.
+        
+        Note: This is now handled by the checkpoint manager automatically.
+        This method is kept for manual checkpoint requests.
+        """
         try:
             # Flush data sink
             if self.data_sink:
                 await self.data_sink.flush()
 
-            # Save order book checkpoint
-            if self.event_stream and self.event_stream.order_book_engine:
-                self.event_stream.order_book_engine.save_checkpoint()
+            # Trigger manual checkpoint
+            if self.checkpoint_manager:
+                await self.checkpoint_manager.checkpoint_trigger.trigger_manual_checkpoint()
 
-            logger.debug(f"Checkpoint completed for {self.symbol}")
+            logger.debug(f"Manual checkpoint triggered for {self.symbol}")
 
         except Exception as e:
-            logger.error(f"Error during checkpoint for {self.symbol}: {e}")
+            logger.error(f"Error during manual checkpoint for {self.symbol}: {e}")
 
     async def run(self) -> None:
         """Run the worker process."""
@@ -301,16 +330,13 @@ class SymbolWorker:
         logger.info(f"Cleaning up worker for {self.symbol}")
 
         try:
-            # Final checkpoint
-            await self._checkpoint()
+            # Stop checkpoint manager (will trigger final checkpoint)
+            if self.checkpoint_manager:
+                await self.checkpoint_manager.stop()
 
             # Stop data sink
             if self.data_sink:
                 await self.data_sink.stop()
-
-            # Clean up event stream
-            if self.event_stream and self.event_stream.order_book_engine:
-                self.event_stream.order_book_engine.save_checkpoint()
 
         except Exception as e:
             logger.error(f"Error during cleanup for {self.symbol}: {e}")
@@ -369,4 +395,5 @@ def symbol_worker_entry_point(
 
     # Run async event loop
     asyncio.run(worker.run())
+
 

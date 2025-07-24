@@ -82,7 +82,10 @@ class OrderBookEngine:
             self.checkpoint_manager = CheckpointManager(
                 checkpoint_dir=checkpoint_dir,
                 symbol=symbol,
+                enable_time_trigger=False,  # Will be managed at pipeline level
             )
+            # Set this engine as state provider
+            self.checkpoint_manager.set_state_provider(self)
         
         # Drift tracking
         self.drift_metrics: Dict[str, float] = {}
@@ -225,9 +228,11 @@ class OrderBookEngine:
                 pl.Series("ask_depth", ask_depth),
             ])
             
-            # Checkpoint if enabled
-            if self.checkpoint_manager and self.updates_processed % 1_000_000 == 0:
-                self._save_checkpoint()
+            # Record events for checkpoint triggers
+            if self.checkpoint_manager:
+                asyncio.create_task(
+                    self.checkpoint_manager.record_events(len(delta_batch))
+                )
             
             return enriched_df
             
@@ -371,3 +376,22 @@ class OrderBookEngine:
         except Exception as e:
             logger.error(f"Failed to load checkpoint: {e}")
             return False
+    
+    def get_checkpoint_state(self) -> Dict[str, Any]:
+        """Get current state for checkpointing.
+        
+        This method is called by the checkpoint manager to capture state.
+        Designed to be fast for COW snapshot creation.
+        
+        Returns:
+            Dictionary containing full pipeline state
+        """
+        return {
+            "book_state": self.book_state.to_dict(),
+            "last_update_id": self.last_update_id,
+            "gap_stats": self.gap_stats.__dict__ if hasattr(self.gap_stats, '__dict__') else self.gap_stats,
+            "updates_processed": self.updates_processed,
+            "snapshot_count": self.snapshot_count,
+            "drift_metrics": self.drift_metrics,
+            "processing_rate": self.updates_processed / max(1, time.time() - self.last_gc_time),
+        }

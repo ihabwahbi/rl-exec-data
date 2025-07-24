@@ -149,3 +149,4 @@ class OptimizedUnifiedStream:
                 metrics["time_range_seconds"] = time_range_seconds
 
         return metrics
+
