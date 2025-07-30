@@ -41,8 +41,8 @@ graph TD
     end
 
     subgraph "Epic 3: Fidelity Reporting"
-        I(FidelityReporter<br>Full metrics catalogue)
-        J[Comprehensive Fidelity Report<br>K-S Tests, Microstructure, Visualizations]
+        I(FidelityReporter<br>Plugin-based metric system<br>3-tier execution model)
+        J[Comprehensive Fidelity Report<br>Advanced Statistical Tests, RL Metrics<br>Interactive HTML Dashboards]
     end
 
     Z7 --> A1

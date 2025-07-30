@@ -92,6 +92,31 @@ The data pipeline will be composed of four primary components, each implemented 
 
 ## Component 3: `Reconstructor` ✅ COMPLETE
 
+**Implementation Details**:
+
+### Streaming Architecture
+Based on validated testing with only 1.67GB peak memory for 8M events (14x safety margin vs 24GB constraint):
+- **Bounded Memory**: Never loads more than 1GB of raw data at once (validated: <500MB for 1M messages)
+- **Backpressure**: Every stage signals capacity to upstream components via asyncio.Queue
+- **Pipeline Stages**: [Disk Reader] → [Parser] → [Order Book Engine] → [Event Formatter] → [Parquet Writer]
+- **Performance**: 12.97M events/sec processing capability
+
+### Multi-Symbol Processing
+Process-per-symbol architecture avoiding Python GIL:
+```
+                    [Main Process]
+                          |
+                   [Symbol Router]
+                    /     |     \
+            Worker-1   Worker-2   Worker-N
+            (BTCUSDT)  (ETHUSDT)  (Symbol-N)
+                |         |          |
+         Full Pipeline Full Pipeline Full Pipeline
+```
+- **IPC**: multiprocessing.Queue with 1000 message buffer per symbol
+- **Scaling**: Linear with number of symbols
+- **Isolation**: Complete process isolation prevents cross-symbol interference
+
   * **Responsibility:** This is the core ETL engine implementing the **Chronological Event Replay** algorithm (as defined in Epic 2 and research). It ingests raw Crypto Lake data, applies sophisticated reconstruction to bridge the paradigm gap between snapshot-based historical data and differential live feeds, creating a high-fidelity unified event stream.
   * **Status:** Fully implemented across Epic 2 stories with validated performance of 336-345K messages/second
   * **Key Interfaces:**
@@ -181,9 +206,11 @@ The data pipeline will be composed of four primary components, each implemented 
       * **Memory Bounded**: <1GB per symbol pipeline (validated under load)
       * **Stable Sort**: Preserves event ordering within same timestamp
 
-## Component 4: `FidelityReporter`
+## Component 4: `FidelityReporter` 🔴 **IN PROGRESS - EPIC 3**
 
   * **Responsibility:** To automate comprehensive quality assurance implementing the full **Fidelity Validation Metrics Catalogue** from the research (as defined in Epic 3). It performs deep statistical and microstructure validation between reconstructed historical data and golden samples to ensure the backtesting environment is a faithful replica of reality.
+  * **Status:** CRITICAL - 0% Implementation Exists. Only ValidationFramework foundation available.
+  * **Architecture:** Plugin-based metric system with three-tier execution model for performance optimization.
   * **Key Interfaces:**
       * **Input:** 
         - Path to the reconstructed data (Unified Event Stream)
@@ -293,6 +320,217 @@ The data pipeline will be composed of four primary components, each implemented 
       * **[ASSUMPTION][R-GMN-05] Two-Sample K-S Tests**: Primary validation tool with p-value > 0.05
       * **[ASSUMPTION][R-OAI-04] Online Metric Computation**: Streaming calculation for efficiency
       * **[ASSUMPTION][R-CLD-06] Queue Position Feature**: Track for RL agent training
+
+### Plugin-Based Architecture
+
+The FidelityReporter implements a sophisticated plugin system for extensible metric calculation:
+
+```python
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import List, Optional, Union
+import polars as pl
+
+@dataclass
+class MetricResult:
+    name: str
+    value: Union[float, dict]
+    metadata: dict
+    visualization: Optional[dict] = None
+
+class MetricPlugin(ABC):
+    """Base class for all fidelity metrics."""
+    
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Unique metric identifier."""
+        pass
+    
+    @property
+    @abstractmethod
+    def category(self) -> str:
+        """Metric category for organization."""
+        pass
+    
+    @property
+    def dependencies(self) -> List[str]:
+        """List of other metrics this depends on."""
+        return []
+    
+    @property
+    def streaming_capable(self) -> bool:
+        """Whether this metric can be calculated in streaming mode."""
+        return False
+    
+    @abstractmethod
+    def calculate(self, data: Union[pl.DataFrame, "Stream"]) -> MetricResult:
+        """Calculate the metric from input data."""
+        pass
+```
+
+### Three-Tier Execution Model
+
+Aligned with PRD validation strategy for optimal performance:
+
+#### Tier 1: Streaming Layer (<1μs latency)
+- **Implementation**: Hook into EventReplayer for real-time collection
+- **Tests**: Hausman microstructure noise detection, sequence gap monitoring
+- **Throughput**: Maintains 336K+ messages/second pipeline performance
+
+#### Tier 2: GPU-Accelerated Layer (<1ms latency)
+- **Implementation**: CUDA/RAPIDS with micro-batching
+- **Tests**: Anderson-Darling (vectorized), Energy Distance, Linear MMD approximations
+- **Acceleration**: 100x speedup over CPU for complex statistical tests
+
+#### Tier 3: Comprehensive Analysis (<100ms latency)
+- **Implementation**: Distributed processing for heavy computations
+- **Tests**: Signature kernel MMD, Copula fitting, RL policy evaluation
+- **Scaling**: Linear with cluster size for large-scale validation
+
+### Advanced Statistical Tests (Replacing K-S)
+
+Implementing state-of-the-art statistical methods per research recommendations:
+
+```python
+class AndersonDarlingMetric(MetricPlugin):
+    """Anderson-Darling test with enhanced tail sensitivity."""
+    
+    def __init__(self, distribution='normal', significance=0.05):
+        self.distribution = distribution
+        self.significance = significance
+    
+    @property
+    def name(self) -> str:
+        return "anderson_darling_test"
+    
+    @property
+    def category(self) -> str:
+        return "statistical_distribution"
+    
+    def calculate(self, data: pl.DataFrame) -> MetricResult:
+        # Implementation using scipy.stats.anderson
+        # Weighted by 1/[F(x)(1-F(x))] for tail emphasis
+        # Returns test statistic and critical values
+        pass
+```
+
+### Core Component Architecture
+
+```yaml
+FidelityReporter:
+  core_components:
+    MetricEngine:
+      purpose: "Orchestrate metric calculation and aggregation"
+      responsibilities:
+        - Plugin discovery and loading
+        - Dependency resolution between metrics
+        - Parallel execution management
+        - Result caching and storage
+      
+    StreamingCollector:
+      purpose: "Collect metrics during reconstruction"
+      features:
+        - Hook into EventReplayer
+        - Minimal overhead design (<5%)
+        - State checkpointing integration
+        - Memory-bounded buffers
+    
+    BatchAnalyzer:
+      purpose: "Post-reconstruction metric calculation"
+      features:
+        - Parquet file processing
+        - Distributed computation support
+        - Progress tracking
+        - Incremental updates
+    
+    ReportGenerator:
+      purpose: "Create visual and text reports"
+      outputs:
+        - HTML Dashboard (Plotly interactive)
+        - Markdown with embedded charts
+        - PDF executive summary
+        - JSON programmatic access
+    
+    ResearchValidator:
+      purpose: "Validate research paper claims"
+      features:
+        - A/B testing framework
+        - Performance benchmarking
+        - Memory profiling
+        - Statistical significance testing
+```
+
+### Comprehensive Metric Catalogue
+
+```yaml
+metric_categories:
+  market_microstructure:
+    spread_analysis:
+      - BidAskSpread(levels=[1,5,10,15,20])
+      - EffectiveSpread
+      - RealizedSpread
+    order_flow:
+      - OrderFlowImbalance  # [R-CLD-05]
+      - OrderFlowToxicity
+      - KylesLambda
+    queue_dynamics:
+      - QueuePositionInference  # [R-CLD-06]
+      - FillTimeDistribution
+      - PriorityPreservation
+  
+  statistical_distribution:
+    advanced_tests:
+      - AndersonDarling  # [R-GEM-01]
+      - CramerVonMises  # [R-OAI-06]
+      - EnergyDistance  # [R-CLD-07]
+      - MaximumMeanDiscrepancy  # [R-ALL-04]
+    temporal_dynamics:
+      - VolatilityClustering  # [R-GEM-03]
+      - OrderFlowClustering  # [R-CLD-08]
+      - IntradaySeasonality  # [R-OAI-07]
+      - MicrostructureNoise  # [R-CLD-09]
+  
+  rl_specific:
+    state_action:
+      - StateCoverage  # [R-CLD-11]
+      - ActionAvailability
+      - StateVisitationFrequency
+    reward_preservation:
+      - RewardDistribution  # [R-OAI-09]
+      - RegimeConsistency  # [R-ALL-05]
+      - SimToRealGap  # [R-GEM-06]
+  
+  adversarial_dynamics:
+    market_manipulation:
+      - SpoofingDetection  # [R-GEM-07]
+      - FleetingLiquidity  # [R-CLD-12]
+      - QuoteStuffing  # [R-OAI-10]
+      - LayeringPatterns
+```
+
+### Visual Reporting Integration
+
+Leveraging Plotly for interactive HTML dashboards:
+
+```python
+class ReportGenerator:
+    def generate_dashboard(self, metrics: Dict[str, MetricResult]):
+        # Executive Summary Section
+        overall_score = self._calculate_fidelity_score(metrics)
+        
+        # Interactive Visualizations
+        figures = {
+            'distribution_comparison': self._create_distribution_plots(metrics),
+            'qq_plots': self._create_qq_plots(metrics),
+            'correlation_heatmap': self._create_correlation_heatmap(metrics),
+            'time_series': self._create_time_series_plots(metrics),
+            'microstructure_3d': self._create_3d_state_space(metrics)
+        }
+        
+        # Generate HTML with embedded Plotly charts
+        return self._render_html_dashboard(overall_score, figures)
+```
 
 ## Component Diagram
 

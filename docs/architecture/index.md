@@ -33,9 +33,9 @@ The architecture has evolved from its initial "data-first" blocking approach to 
   - [Architectural and Design Patterns](./high-level-architecture.md#architectural-and-design-patterns)
 
 ### Implementation Strategies
-- [Streaming Architecture](./streaming-architecture.md) - **NEW: Memory-bounded processing**
 - [Decimal Precision Strategy](./decimal-strategy.md) - **NEW: Int64 pips approach**
 - [Performance Optimization](./performance-optimization.md) - **NEW: Achieving 100k events/sec**
+- [Core Workflows](./core-workflows.md) - **NEW: Detailed sequence diagrams**
 
 ### Technical Details
 - [Tech Stack](./tech-stack.md)
@@ -65,6 +65,7 @@ The architecture has evolved from its initial "data-first" blocking approach to 
 - [Error Handling](./error-handling.md) - **Comprehensive error handling guide**
 - [Coding Standards](./coding-standards.md)
 - [Test Strategy](./test-strategy.md)
+- [Security](./security.md) - **NEW: Security architecture and compliance**
 
 ### Planning & Validation
 - [Architecture Status](./architecture-status.md) - **CURRENT: Single source of truth**

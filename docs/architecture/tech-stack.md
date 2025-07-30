@@ -23,3 +23,5 @@ This technology stack is selected for performance, simplicity, and its widesprea
 | **Visualization** | plotly | 5.20+ | Interactive charts | Interactive HTML charts for detailed microstructure analysis. |
 | **Monitoring** | opentelemetry-api | 1.24+ | Metrics export | Standardized metrics format for observability integration. |
 | **Execution Env.** | CLI Scripts | N/A | Application architecture | A modular set of command-line scripts provides simplicity and ease of orchestration for this ETL task. No complex framework is needed. |
+| **GPU Acceleration** | CUDA | 11.8+ | Tier 2 Fidelity Validation (<1ms) for advanced statistical tests (MMD, etc.) | Required to meet the performance demands of the advanced validation strategy and prevent the fidelity reporting process from becoming a bottleneck. |
+| **GPU Acceleration** | RAPIDS | 24.04+ | GPU-accelerated data science libraries | Provides cuDF and cuPy for GPU-accelerated statistical computations, achieving 100x speedup for Anderson-Darling, Energy Distance, and MMD calculations. |
