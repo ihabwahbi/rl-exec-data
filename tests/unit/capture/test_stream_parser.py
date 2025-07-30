@@ -1,7 +1,7 @@
 """Unit tests for CombinedStreamParser."""
 
 import pytest
-from src.rlx_datapipe.capture.stream_parser import CombinedStreamParser, ParsedMessage
+from rlx_datapipe.capture.stream_parser import CombinedStreamParser, ParsedMessage
 
 
 class TestCombinedStreamParser:

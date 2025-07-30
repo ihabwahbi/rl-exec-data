@@ -34,7 +34,7 @@ class CheckpointMonitor:
 
     def __init__(self, sample_window_sec: float = 10.0):
         """Initialize checkpoint monitor.
-        
+
         Args:
             sample_window_sec: Window size for throughput sampling
         """
@@ -53,7 +53,7 @@ class CheckpointMonitor:
 
     def record_events(self, event_count: int) -> None:
         """Record processed events for throughput calculation.
-        
+
         Args:
             event_count: Number of events processed
         """
@@ -83,7 +83,9 @@ class CheckpointMonitor:
         self.checkpoint_start_time = time.time()
         self.metrics.events_before_checkpoint = self.metrics.events_after_checkpoint
 
-        logger.debug(f"Checkpoint started at throughput: {self.current_throughput:.0f} events/sec")
+        logger.debug(
+            f"Checkpoint started at throughput: {self.current_throughput:.0f} events/sec"
+        )
 
     def checkpoint_completed(self) -> None:
         """Mark the completion of a checkpoint operation."""
@@ -96,12 +98,10 @@ class CheckpointMonitor:
         self.metrics.checkpoint_count += 1
         self.metrics.total_checkpoint_time_ms += checkpoint_duration_ms
         self.metrics.max_checkpoint_time_ms = max(
-            self.metrics.max_checkpoint_time_ms,
-            checkpoint_duration_ms
+            self.metrics.max_checkpoint_time_ms, checkpoint_duration_ms
         )
         self.metrics.min_checkpoint_time_ms = min(
-            self.metrics.min_checkpoint_time_ms,
-            checkpoint_duration_ms
+            self.metrics.min_checkpoint_time_ms, checkpoint_duration_ms
         )
 
         # Record timestamp
@@ -110,16 +110,20 @@ class CheckpointMonitor:
         # Calculate average interval
         if len(self.metrics.checkpoint_timestamps) > 1:
             intervals = [
-                self.metrics.checkpoint_timestamps[i] - self.metrics.checkpoint_timestamps[i-1]
+                self.metrics.checkpoint_timestamps[i]
+                - self.metrics.checkpoint_timestamps[i - 1]
                 for i in range(1, len(self.metrics.checkpoint_timestamps))
             ]
-            self.metrics.average_checkpoint_interval_sec = sum(intervals) / len(intervals)
+            self.metrics.average_checkpoint_interval_sec = sum(intervals) / len(
+                intervals
+            )
 
         # Calculate throughput impact
         if self.baseline_throughput > 0 and self.current_throughput > 0:
             degradation = (
-                (self.baseline_throughput - self.current_throughput) /
-                self.baseline_throughput * 100
+                (self.baseline_throughput - self.current_throughput)
+                / self.baseline_throughput
+                * 100
             )
             self.metrics.throughput_degradation_percent = max(0, degradation)
 
@@ -132,16 +136,16 @@ class CheckpointMonitor:
 
     def get_metrics(self) -> dict[str, any]:
         """Get checkpoint performance metrics.
-        
+
         Returns:
             Dictionary of performance metrics
         """
-        avg_checkpoint_time = (
-            self.metrics.total_checkpoint_time_ms / max(1, self.metrics.checkpoint_count)
+        avg_checkpoint_time = self.metrics.total_checkpoint_time_ms / max(
+            1, self.metrics.checkpoint_count
         )
 
-        avg_throughput = (
-            sum(self.metrics.throughput_samples) / max(1, len(self.metrics.throughput_samples))
+        avg_throughput = sum(self.metrics.throughput_samples) / max(
+            1, len(self.metrics.throughput_samples)
         )
 
         return {
@@ -174,4 +178,3 @@ class CheckpointMonitor:
             f"  Avg Interval: {metrics['avg_checkpoint_interval_sec']:.0f}s\n"
             f"  Avg Throughput: {metrics['avg_throughput']:.0f} events/sec"
         )
-

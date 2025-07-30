@@ -108,13 +108,13 @@ class StateSnapshot:
 
     async def create_snapshot(self, state_provider: Any) -> PipelineState:
         """Create a copy-on-write snapshot of current state.
-        
+
         This method creates a snapshot without blocking the main pipeline.
         The snapshot is created in <100ms using shallow copy techniques.
-        
+
         Args:
             state_provider: Object providing get_checkpoint_state() method
-            
+
         Returns:
             Snapshot of current pipeline state
         """
@@ -164,13 +164,13 @@ class StateSnapshot:
 
     async def persist_snapshot(self, state: PipelineState) -> Path:
         """Persist snapshot to disk using Parquet format.
-        
+
         This method runs asynchronously without blocking the pipeline.
         Uses atomic write pattern for crash safety.
-        
+
         Args:
             state: Pipeline state to persist
-            
+
         Returns:
             Path to persisted checkpoint file
         """
@@ -199,7 +199,7 @@ class StateSnapshot:
                     "symbol": self.symbol,
                     "checkpoint_version": "1.0",
                     "update_id": str(state.last_update_id),
-                }
+                },
             )
 
             # Set secure file permissions before rename
@@ -221,10 +221,10 @@ class StateSnapshot:
 
     async def load_snapshot(self, checkpoint_path: Path) -> PipelineState | None:
         """Load snapshot from checkpoint file.
-        
+
         Args:
             checkpoint_path: Path to checkpoint file
-            
+
         Returns:
             Loaded pipeline state or None if load fails
         """
@@ -281,10 +281,10 @@ class StateSnapshot:
 
     def _estimate_state_size(self, state: PipelineState) -> int:
         """Estimate the size of the state object in bytes.
-        
+
         Args:
             state: Pipeline state to estimate
-            
+
         Returns:
             Estimated size in bytes
         """
@@ -308,4 +308,3 @@ class StateSnapshot:
             size += sys.getsizeof(state.drift_metrics)
 
         return size
-

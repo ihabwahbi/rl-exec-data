@@ -9,6 +9,7 @@ from loguru import logger
 @dataclass
 class ParsedMessage:
     """Parsed message with metadata."""
+
     stream: str
     data_type: str
     symbol: str
@@ -26,16 +27,16 @@ class CombinedStreamParser:
             "total_messages": 0,
             "trades": 0,
             "orderbook_updates": 0,
-            "errors": 0
+            "errors": 0,
         }
 
     def parse(self, message: dict[str, Any], receive_ns: int) -> ParsedMessage | None:
         """Parse a combined stream message.
-        
+
         Args:
             message: Raw message dict from WebSocket
             receive_ns: Nanosecond timestamp when message was received
-            
+
         Returns:
             ParsedMessage if successful, None if parsing failed
         """
@@ -85,7 +86,7 @@ class CombinedStreamParser:
                 symbol=symbol,
                 data=data,
                 exchange_timestamp=exchange_timestamp,
-                receive_ns=receive_ns
+                receive_ns=receive_ns,
             )
 
         except Exception as e:
@@ -103,16 +104,16 @@ class CombinedStreamParser:
             "total_messages": 0,
             "trades": 0,
             "orderbook_updates": 0,
-            "errors": 0
+            "errors": 0,
         }
 
     @staticmethod
     def format_trade(parsed: ParsedMessage) -> dict[str, Any]:
         """Format trade data for storage.
-        
+
         Args:
             parsed: Parsed trade message
-            
+
         Returns:
             Formatted trade dict
         """
@@ -128,16 +129,16 @@ class CombinedStreamParser:
             "trade_time": data["T"],
             "is_buyer_maker": data["m"],
             "receive_ns": parsed.receive_ns,
-            "exchange_timestamp": parsed.exchange_timestamp
+            "exchange_timestamp": parsed.exchange_timestamp,
         }
 
     @staticmethod
     def format_orderbook_update(parsed: ParsedMessage) -> dict[str, Any]:
         """Format orderbook update for storage.
-        
+
         Args:
             parsed: Parsed orderbook update message
-            
+
         Returns:
             Formatted orderbook update dict
         """
@@ -151,5 +152,5 @@ class CombinedStreamParser:
             "bids": data["b"],  # List of [price, quantity]
             "asks": data["a"],  # List of [price, quantity]
             "receive_ns": parsed.receive_ns,
-            "exchange_timestamp": parsed.exchange_timestamp
+            "exchange_timestamp": parsed.exchange_timestamp,
         }

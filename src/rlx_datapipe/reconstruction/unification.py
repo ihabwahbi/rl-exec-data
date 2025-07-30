@@ -3,6 +3,7 @@ Unification module for merging multiple data streams chronologically.
 
 Implements the ChronologicalEventReplay pattern for accurate market replay.
 """
+
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -23,6 +24,7 @@ from .data_ingestion import (
 @dataclass
 class UnificationConfig:
     """Configuration for data unification."""
+
     batch_size: int = 1000
     memory_limit_gb: float = 1.0
     enable_streaming: bool = True
@@ -50,7 +52,7 @@ class UnifiedEventStream:
         self,
         trades_path: Path | None = None,
         book_snapshots_path: Path | None = None,
-        book_deltas_path: Path | None = None
+        book_deltas_path: Path | None = None,
     ) -> pl.DataFrame:
         """Merge multiple data streams into a unified chronological stream.
 
@@ -135,7 +137,7 @@ class UnifiedEventStream:
         self,
         trades_path: Path | None = None,
         book_snapshots_path: Path | None = None,
-        book_deltas_path: Path | None = None
+        book_deltas_path: Path | None = None,
     ) -> Iterator[pl.DataFrame]:
         """Merge multiple data streams in memory-bounded batches.
 
@@ -222,7 +224,7 @@ class BatchedDataReader:
         self,
         data_path: Path,
         batch_size: int = 1000,
-        memory_limit_bytes: int = 1_073_741_824  # 1GB
+        memory_limit_bytes: int = 1_073_741_824,  # 1GB
     ):
         """Initialize batched reader.
 
@@ -251,7 +253,7 @@ class BatchedDataReader:
 
             # Estimate memory usage (rough approximation)
             batch_memory = df.estimated_size()
-            
+
             # For small test data, ensure we can detect memory limits
             # by considering the cumulative effect and overhead
             if batch_memory < 100_000:  # Less than 100KB
@@ -290,4 +292,3 @@ class BatchedDataReader:
     def is_backpressure_active(self) -> bool:
         """Check if backpressure is currently active."""
         return self._backpressure_active
-

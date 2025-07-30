@@ -63,12 +63,14 @@ class MultiSymbolPipeline:
                         name="BTCUSDT",
                         enabled=True,
                         memory_limit_mb=1024,
-                        queue_size=1000
+                        queue_size=1000,
                     )
-                ]
+                ],
             )
 
-    def _setup_single_symbol_mode(self, symbol: str, output_dir: Path) -> None:  # noqa: ARG002
+    def _setup_single_symbol_mode(
+        self, symbol: str, output_dir: Path
+    ) -> None:  # noqa: ARG002
         """Setup for single-symbol backward compatible mode.
 
         Args:
@@ -82,16 +84,14 @@ class MultiSymbolPipeline:
             enabled=False,
             symbols=[
                 SymbolConfig(
-                    name=symbol,
-                    enabled=True,
-                    memory_limit_mb=1024,
-                    queue_size=1000
+                    name=symbol, enabled=True, memory_limit_mb=1024, queue_size=1000
                 )
-            ]
+            ],
         )
 
-    async def run_multi_symbol(self, input_path: Path, output_dir: Path,
-                              manifest_path: Path | None = None) -> None:
+    async def run_multi_symbol(
+        self, input_path: Path, output_dir: Path, manifest_path: Path | None = None
+    ) -> None:
         """Run the pipeline in multi-symbol mode.
 
         Args:
@@ -108,13 +108,12 @@ class MultiSymbolPipeline:
         self.process_manager = ProcessManager(
             config=self.config,
             worker_target=symbol_worker_entry_point,
-            output_dir=str(output_dir)
+            output_dir=str(output_dir),
         )
 
         # Initialize symbol router
         self.symbol_router = SymbolRouter(
-            config=self.config,
-            process_manager=self.process_manager
+            config=self.config, process_manager=self.process_manager
         )
 
         # Start process manager and workers
@@ -122,8 +121,7 @@ class MultiSymbolPipeline:
 
         # Initialize data ingestion
         self.data_ingestion = DataIngestion(
-            input_path=input_path,
-            manifest_path=manifest_path
+            input_path=input_path, manifest_path=manifest_path
         )
 
         # Main processing loop
@@ -140,7 +138,10 @@ class MultiSymbolPipeline:
                     messages_processed += 1
 
                 # Check for backpressure
-                if messages_processed % 10000 == 0 and self.symbol_router.is_backpressure_detected():
+                if (
+                    messages_processed % 10000 == 0
+                    and self.symbol_router.is_backpressure_detected()
+                ):
                     logger.warning("Backpressure detected, slowing down")
                     await asyncio.sleep(0.1)
 
@@ -151,8 +152,13 @@ class MultiSymbolPipeline:
             logger.info("Shutting down multi-symbol pipeline")
             self.process_manager.stop()
 
-    async def run_single_symbol(self, input_path: Path, output_dir: Path,
-                               symbol: str, manifest_path: Path | None = None) -> None:
+    async def run_single_symbol(
+        self,
+        input_path: Path,
+        output_dir: Path,
+        symbol: str,
+        manifest_path: Path | None = None,
+    ) -> None:
         """Run the pipeline in single-symbol mode for backward compatibility.
 
         Args:
@@ -186,10 +192,7 @@ class MultiSymbolPipeline:
             enable_drift_tracking=True,
         )
 
-        event_stream = UnifiedEventStreamEnhanced(
-            symbol=symbol,
-            config=stream_config
-        )
+        event_stream = UnifiedEventStreamEnhanced(symbol=symbol, config=stream_config)
 
         # Create data sink
         data_sink, event_queue = await create_data_sink_pipeline(
@@ -197,7 +200,7 @@ class MultiSymbolPipeline:
             symbol=symbol,
             batch_size=5000,
             queue_size=5000,
-            max_file_size_mb=400
+            max_file_size_mb=400,
         )
 
         # Start data sink
@@ -205,8 +208,7 @@ class MultiSymbolPipeline:
 
         # Initialize data ingestion
         self.data_ingestion = DataIngestion(
-            input_path=input_path,
-            manifest_path=manifest_path
+            input_path=input_path, manifest_path=manifest_path
         )
 
         # Process messages
@@ -231,9 +233,13 @@ class MultiSymbolPipeline:
             # Cleanup
             await data_sink.stop()
 
-    async def run(self, input_path: Path, output_dir: Path,
-                  symbol: str | None = None,
-                  manifest_path: Path | None = None) -> None:
+    async def run(
+        self,
+        input_path: Path,
+        output_dir: Path,
+        symbol: str | None = None,
+        manifest_path: Path | None = None,
+    ) -> None:
         """Run the pipeline in appropriate mode.
 
         Args:
@@ -249,11 +255,17 @@ class MultiSymbolPipeline:
         if symbol or not self.config.enabled:
             # Single-symbol mode (backward compatible)
             if symbol:
-                await self.run_single_symbol(input_path, output_dir, symbol, manifest_path)
+                await self.run_single_symbol(
+                    input_path, output_dir, symbol, manifest_path
+                )
             else:
                 # Use first configured symbol
-                first_symbol = self.config.symbols[0].name if self.config.symbols else "BTCUSDT"
-                await self.run_single_symbol(input_path, output_dir, first_symbol, manifest_path)
+                first_symbol = (
+                    self.config.symbols[0].name if self.config.symbols else "BTCUSDT"
+                )
+                await self.run_single_symbol(
+                    input_path, output_dir, first_symbol, manifest_path
+                )
         else:
             # Multi-symbol mode
             await self.run_multi_symbol(input_path, output_dir, manifest_path)
@@ -266,41 +278,29 @@ def main():
     )
 
     parser.add_argument(
-        "input_path",
-        type=Path,
-        help="Input data path (directory or file)"
+        "input_path", type=Path, help="Input data path (directory or file)"
     )
 
     parser.add_argument(
-        "output_dir",
-        type=Path,
-        help="Output directory for reconstructed data"
+        "output_dir", type=Path, help="Output directory for reconstructed data"
     )
 
     parser.add_argument(
         "--symbol",
         type=str,
-        help="Trading symbol for single-symbol mode (e.g., BTCUSDT)"
+        help="Trading symbol for single-symbol mode (e.g., BTCUSDT)",
     )
 
-    parser.add_argument(
-        "--config",
-        type=Path,
-        help="Path to configuration file"
-    )
+    parser.add_argument("--config", type=Path, help="Path to configuration file")
 
-    parser.add_argument(
-        "--manifest",
-        type=Path,
-        help="Path to manifest file"
-    )
+    parser.add_argument("--manifest", type=Path, help="Path to manifest file")
 
     parser.add_argument(
         "--log-level",
         type=str,
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Logging level"
+        help="Logging level",
     )
 
     args = parser.parse_args()
@@ -310,7 +310,7 @@ def main():
     logger.add(
         sys.stderr,
         level=args.log_level,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
     )
 
     # Create and run pipeline
@@ -322,7 +322,7 @@ def main():
                 input_path=args.input_path,
                 output_dir=args.output_dir,
                 symbol=args.symbol,
-                manifest_path=args.manifest
+                manifest_path=args.manifest,
             )
         )
     except KeyboardInterrupt:
@@ -334,5 +334,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

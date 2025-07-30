@@ -18,12 +18,7 @@ from .websocket_handler import WebSocketHandler
 class DataCapture:
     """Main data capture coordinator."""
 
-    def __init__(
-        self,
-        symbol: str,
-        output_dir: str,
-        duration: int | None = None
-    ):
+    def __init__(self, symbol: str, output_dir: str, duration: int | None = None):
         """Initialize data capture.
 
         Args:
@@ -38,9 +33,9 @@ class DataCapture:
         # Initialize components
         # Single writer for chronological order with small buffer for immediate writes
         self.writer = JSONLWriter(
-            output_dir, 
+            output_dir,
             f"{symbol}_capture_{int(time.time())}",
-            buffer_size=10  # Small buffer for quicker writes
+            buffer_size=10,  # Small buffer for quicker writes
         )
 
         # WebSocket URL for combined streams
@@ -66,7 +61,7 @@ class DataCapture:
         output = {
             "capture_ns": receive_ns,
             "stream": message["stream"],
-            "data": message["data"]  # This is the RAW message, untouched!
+            "data": message["data"],  # This is the RAW message, untouched!
         }
 
         # Write to single chronological file
@@ -91,7 +86,7 @@ class DataCapture:
         logger.info(f"Total records: {writer_stats['total_records']}")
         logger.info(f"Buffered records: {writer_stats.get('buffer_size', 0)}")
         logger.info(f"Current file: {writer_stats.get('current_file', 'N/A')}")
-        
+
         # Force flush to ensure data is written
         self.writer.flush()
 
@@ -102,9 +97,7 @@ class DataCapture:
 
         # Create WebSocket handler
         ws_handler = WebSocketHandler(
-            url=self.ws_url,
-            on_message=self._on_message,
-            on_connect=self._on_connect
+            url=self.ws_url, on_message=self._on_message, on_connect=self._on_connect
         )
 
         # Start periodic stats printing

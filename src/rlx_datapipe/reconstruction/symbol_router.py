@@ -11,7 +11,7 @@ import hashlib
 import time
 from dataclasses import dataclass
 from multiprocessing import Queue
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -22,6 +22,7 @@ from .process_manager import ProcessManager
 @dataclass
 class RoutedMessage:
     """Message wrapper with routing metadata."""
+
     symbol: str
     message: Any  # Original parsed message
     timestamp: float  # Router timestamp for monitoring
@@ -31,6 +32,7 @@ class RoutedMessage:
 @dataclass
 class RoutingMetrics:
     """Metrics for routing performance."""
+
     messages_routed: int = 0
     messages_dropped: int = 0
     routing_errors: int = 0
@@ -61,7 +63,7 @@ class SymbolRouter:
 
     def __init__(self, config: MultiSymbolConfig, process_manager: ProcessManager):
         """Initialize the symbol router.
-        
+
         Args:
             config: Multi-symbol configuration
             process_manager: Process manager instance
@@ -74,14 +76,16 @@ class SymbolRouter:
         self.metrics = RoutingMetrics()
         self._symbol_cache: dict[str, Queue] = {}
 
-        logger.info(f"Initialized SymbolRouter with strategy: {self.routing_strategy.value}")
+        logger.info(
+            f"Initialized SymbolRouter with strategy: {self.routing_strategy.value}"
+        )
 
     def route_message(self, message: Any) -> bool:
         """Route a message to the appropriate worker.
-        
+
         Args:
             message: Message to route (must have 'symbol' attribute)
-            
+
         Returns:
             True if message was routed, False if dropped
         """
@@ -105,7 +109,7 @@ class SymbolRouter:
                 symbol=symbol,
                 message=message,
                 timestamp=time.time(),
-                sequence=self.sequence_counter
+                sequence=self.sequence_counter,
             )
             self.sequence_counter += 1
 
@@ -124,12 +128,12 @@ class SymbolRouter:
             self.metrics.routing_errors += 1
             return False
 
-    def _extract_symbol(self, message: Any) -> Optional[str]:
+    def _extract_symbol(self, message: Any) -> str | None:
         """Extract symbol from message based on routing strategy.
-        
+
         Args:
             message: Message to extract symbol from
-            
+
         Returns:
             Symbol string or None if not found
         """
@@ -164,12 +168,12 @@ class SymbolRouter:
 
         return None
 
-    def _get_queue_for_symbol(self, symbol: str) -> Optional[Queue]:
+    def _get_queue_for_symbol(self, symbol: str) -> Queue | None:
         """Get the queue for a specific symbol.
-        
+
         Args:
             symbol: Symbol identifier
-            
+
         Returns:
             Queue for the symbol or None if not found
         """
@@ -186,10 +190,10 @@ class SymbolRouter:
 
     def route_batch(self, messages: list[Any]) -> int:
         """Route a batch of messages.
-        
+
         Args:
             messages: List of messages to route
-            
+
         Returns:
             Number of successfully routed messages
         """
@@ -201,7 +205,7 @@ class SymbolRouter:
 
     def get_metrics(self) -> dict[str, Any]:
         """Get routing metrics.
-        
+
         Returns:
             Dictionary of routing metrics
         """
@@ -213,7 +217,7 @@ class SymbolRouter:
             "messages_per_symbol": dict(self.metrics.messages_per_symbol),
             "dropped_per_symbol": dict(self.metrics.dropped_per_symbol),
             "routing_strategy": self.routing_strategy.value,
-            "active_symbols": list(self.process_manager.workers.keys())
+            "active_symbols": list(self.process_manager.workers.keys()),
         }
 
     def clear_cache(self) -> None:
@@ -223,7 +227,7 @@ class SymbolRouter:
 
     def update_routing_strategy(self, strategy: RoutingStrategy) -> None:
         """Update the routing strategy.
-        
+
         Args:
             strategy: New routing strategy
         """
@@ -232,7 +236,7 @@ class SymbolRouter:
 
     def get_queue_depths(self) -> dict[str, int]:
         """Get current queue depths for all symbols.
-        
+
         Returns:
             Dictionary mapping symbol to queue size
         """
@@ -246,10 +250,10 @@ class SymbolRouter:
 
     def is_backpressure_detected(self, threshold: float = 0.8) -> bool:
         """Check if any queue is experiencing backpressure.
-        
+
         Args:
             threshold: Queue fullness threshold (0.0 to 1.0)
-            
+
         Returns:
             True if any queue is above threshold
         """
@@ -258,9 +262,10 @@ class SymbolRouter:
                 queue_size = worker.queue.qsize()
                 max_size = worker.config.queue_size
                 if queue_size / max_size >= threshold:
-                    logger.warning(f"Backpressure detected for {symbol}: {queue_size}/{max_size}")
+                    logger.warning(
+                        f"Backpressure detected for {symbol}: {queue_size}/{max_size}"
+                    )
                     return True
             except Exception:
                 pass
         return False
-

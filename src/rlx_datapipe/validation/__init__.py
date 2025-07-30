@@ -1,14 +1,14 @@
 """Validation framework for comparing reconstructed data against golden samples."""
 
-from .base import BaseValidator, ValidationResult, ValidationReport
+from .base import BaseValidator, ValidationReport, ValidationResult
 from .loaders import GoldenSampleLoader
 from .pipeline import ValidationPipeline
-from .statistical import KSValidator, PowerLawValidator, BasicStatsCalculator
+from .statistical import BasicStatsCalculator, KSValidator, PowerLawValidator
 from .validators import ChronologicalOrderValidator, SequenceGapValidator
 
 __all__ = [
     "BaseValidator",
-    "ValidationResult", 
+    "ValidationResult",
     "ValidationReport",
     "GoldenSampleLoader",
     "ValidationPipeline",

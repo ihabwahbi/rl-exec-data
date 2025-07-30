@@ -11,7 +11,7 @@ class PipelineStateProvider:
 
     def __init__(self, symbol: str):
         """Initialize pipeline state provider.
-        
+
         Args:
             symbol: Trading symbol for this pipeline
         """
@@ -44,7 +44,7 @@ class PipelineStateProvider:
 
     def update_file_progress(self, filename: str, offset: int) -> None:
         """Update current file and offset.
-        
+
         Args:
             filename: Current file being processed
             offset: Current offset in file
@@ -54,7 +54,7 @@ class PipelineStateProvider:
 
     def increment_events_processed(self, count: int = 1) -> None:
         """Increment events processed counter.
-        
+
         Args:
             count: Number of events to add
         """
@@ -62,10 +62,10 @@ class PipelineStateProvider:
 
     def get_checkpoint_state(self) -> dict[str, Any]:
         """Get complete pipeline state for checkpointing.
-        
+
         This method aggregates state from all components into a unified
         checkpoint state. Designed to be fast for COW snapshot creation.
-        
+
         Returns:
             Dictionary containing full pipeline state
         """
@@ -80,13 +80,15 @@ class PipelineStateProvider:
         # Get order book state if available
         if self.order_book_engine:
             engine_state = self.order_book_engine.get_checkpoint_state()
-            state.update({
-                "order_book_state": engine_state.get("book_state", {}),
-                "last_update_id": engine_state.get("last_update_id"),
-                "gap_statistics": engine_state.get("gap_stats", {}),
-                "drift_metrics": engine_state.get("drift_metrics", {}),
-                "updates_processed": engine_state.get("updates_processed", 0),
-            })
+            state.update(
+                {
+                    "order_book_state": engine_state.get("book_state", {}),
+                    "last_update_id": engine_state.get("last_update_id"),
+                    "gap_statistics": engine_state.get("gap_stats", {}),
+                    "drift_metrics": engine_state.get("drift_metrics", {}),
+                    "updates_processed": engine_state.get("updates_processed", 0),
+                }
+            )
 
         # Get file reader state if available
         if self.file_reader and hasattr(self.file_reader, "get_position"):
@@ -107,7 +109,7 @@ class PipelineStateProvider:
 
     def restore_from_checkpoint(self, state: dict[str, Any]) -> None:
         """Restore pipeline state from checkpoint.
-        
+
         Args:
             state: Checkpoint state to restore
         """
@@ -127,4 +129,3 @@ class PipelineStateProvider:
         """Calculate current processing rate."""
         elapsed = max(1, time.time() - self.pipeline_start_time)
         return self.events_processed / elapsed
-

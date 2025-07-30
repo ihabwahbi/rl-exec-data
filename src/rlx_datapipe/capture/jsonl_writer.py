@@ -18,10 +18,10 @@ class JSONLWriter:
         file_prefix: str,
         compress: bool = True,
         buffer_size: int = 1000,
-        rotation_interval: int = 3600  # seconds
+        rotation_interval: int = 3600,  # seconds
     ):
         """Initialize JSONL writer.
-        
+
         Args:
             output_dir: Directory to write files to
             file_prefix: Prefix for output files
@@ -80,7 +80,9 @@ class JSONLWriter:
             self._file_handle = None
 
             if self._current_file:
-                logger.info(f"Closed file: {self._current_file} ({self._record_count} records)")
+                logger.info(
+                    f"Closed file: {self._current_file} ({self._record_count} records)"
+                )
 
     def _should_rotate(self) -> bool:
         """Check if file should be rotated."""
@@ -105,7 +107,7 @@ class JSONLWriter:
 
     def write(self, record: dict[str, Any]) -> None:
         """Write a record to JSONL file.
-        
+
         Args:
             record: Dictionary to write as JSON line
         """
@@ -130,7 +132,9 @@ class JSONLWriter:
     def close(self) -> None:
         """Close writer and flush remaining data."""
         self._close_file()
-        logger.info(f"JSONL writer closed. Total records written: {self._total_records}")
+        logger.info(
+            f"JSONL writer closed. Total records written: {self._total_records}"
+        )
 
     def get_stats(self) -> dict[str, Any]:
         """Get writer statistics."""
@@ -138,5 +142,5 @@ class JSONLWriter:
             "current_file": str(self._current_file) if self._current_file else None,
             "current_file_records": self._record_count,
             "total_records": self._total_records,
-            "buffer_size": len(self._buffer)
+            "buffer_size": len(self._buffer),
         }

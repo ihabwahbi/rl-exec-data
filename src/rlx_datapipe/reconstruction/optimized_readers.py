@@ -3,7 +3,7 @@ Optimized data readers with zero-copy operations and memory pre-allocation.
 
 Provides high-performance implementations for reading market data.
 """
-import os
+
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -54,11 +54,13 @@ class OptimizedTradesReader:
 
                 # Vectorized type labeling and decimal conversion
                 # Use Float64 for now due to Polars compatibility
-                df = df.with_columns([
-                    pl.col("price").cast(pl.Float64),
-                    pl.col("quantity").cast(pl.Float64),
-                    pl.lit(EventType.TRADE.value).alias("event_type")
-                ])
+                df = df.with_columns(
+                    [
+                        pl.col("price").cast(pl.Float64),
+                        pl.col("quantity").cast(pl.Float64),
+                        pl.lit(EventType.TRADE.value).alias("event_type"),
+                    ]
+                )
 
                 yield df
         else:
@@ -68,11 +70,13 @@ class OptimizedTradesReader:
 
             # Vectorized operations
             # Use Float64 for now due to Polars compatibility
-            df = df.with_columns([
-                pl.col("price").cast(pl.Float64),
-                pl.col("quantity").cast(pl.Float64),
-                pl.lit(EventType.TRADE.value).alias("event_type")
-            ])
+            df = df.with_columns(
+                [
+                    pl.col("price").cast(pl.Float64),
+                    pl.col("quantity").cast(pl.Float64),
+                    pl.lit(EventType.TRADE.value).alias("event_type"),
+                ]
+            )
 
             yield df
 
@@ -93,10 +97,7 @@ class OptimizedUnifiedStream:
         # Set memory pool size
         self.memory_pool_size = memory_pool_size_mb * 1024 * 1024
 
-    def merge_with_vectorization(
-        self,
-        dataframes: list[pl.DataFrame]
-    ) -> pl.DataFrame:
+    def merge_with_vectorization(self, dataframes: list[pl.DataFrame]) -> pl.DataFrame:
         """Merge dataframes using vectorized operations.
 
         Args:
@@ -122,7 +123,6 @@ class OptimizedUnifiedStream:
         # Maintain order is critical for stable sort
         return unified_df.sort("origin_time", maintain_order=True)
 
-
     def profile_performance(self, df: pl.DataFrame) -> dict:
         """Profile performance metrics.
 
@@ -137,7 +137,7 @@ class OptimizedUnifiedStream:
             "memory_bytes": df.estimated_size(),
             "memory_mb": df.estimated_size() / (1024 * 1024),
             "columns": len(df.columns),
-            "dtypes": df.dtypes
+            "dtypes": df.dtypes,
         }
 
         # Calculate events per second if we have time range
@@ -149,4 +149,3 @@ class OptimizedUnifiedStream:
                 metrics["time_range_seconds"] = time_range_seconds
 
         return metrics
-

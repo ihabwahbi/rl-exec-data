@@ -17,7 +17,7 @@ class RecoveryManager:
         symbol: str,
     ):
         """Initialize recovery manager.
-        
+
         Args:
             checkpoint_dir: Directory containing checkpoints
             symbol: Trading symbol for recovery
@@ -40,7 +40,7 @@ class RecoveryManager:
 
     async def attempt_recovery(self) -> bool:
         """Attempt to recover from latest checkpoint.
-        
+
         Returns:
             True if recovery successful, False otherwise
         """
@@ -75,7 +75,7 @@ class RecoveryManager:
 
     async def _find_latest_valid_checkpoint(self) -> dict[str, Any] | None:
         """Find and load the latest valid checkpoint.
-        
+
         Returns:
             Checkpoint state or None if no valid checkpoint found
         """
@@ -95,10 +95,10 @@ class RecoveryManager:
 
     def _validate_checkpoint(self, state: dict[str, Any]) -> bool:
         """Validate checkpoint integrity.
-        
+
         Args:
             state: Checkpoint state to validate
-            
+
         Returns:
             True if checkpoint is valid
         """
@@ -129,7 +129,7 @@ class RecoveryManager:
 
     def get_recovery_state(self) -> dict[str, Any] | None:
         """Get recovered state.
-        
+
         Returns:
             Recovered checkpoint state or None
         """
@@ -137,7 +137,7 @@ class RecoveryManager:
 
     def get_resume_position(self) -> tuple[str | None, int]:
         """Get file and offset to resume from.
-        
+
         Returns:
             Tuple of (filename, offset) or (None, 0)
         """
@@ -151,7 +151,7 @@ class RecoveryManager:
 
     def get_last_update_id(self) -> int | None:
         """Get last processed update ID.
-        
+
         Returns:
             Last update ID or None
         """
@@ -166,11 +166,11 @@ class RecoveryManager:
         first_event_time: int,
     ) -> bool:
         """Validate data continuity after recovery.
-        
+
         Args:
             first_update_id: First update ID after recovery
             first_event_time: First event timestamp after recovery
-            
+
         Returns:
             True if continuity is valid
         """
@@ -218,4 +218,3 @@ class RecoveryManager:
             f"  Resume Offset: {self.recovered_state.get('file_offset', 0)}\n"
             f"  Snapshot Count: {self.recovered_state.get('snapshot_count', 0)}"
         )
-

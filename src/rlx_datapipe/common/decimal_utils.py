@@ -3,8 +3,6 @@
 import numpy as np
 import pyarrow as pa
 from numba import jit
-from typing import Union
-
 
 # Scaling factor for int64 representation (8 decimal places)
 PRICE_SCALE = 100_000_000  # 10^8
@@ -15,11 +13,11 @@ QUANTITY_SCALE = 100_000_000  # 10^8
 def float_to_scaled_int64(value: float, scale: int = PRICE_SCALE) -> np.int64:
     """
     Convert float to scaled int64.
-    
+
     Args:
         value: Float value to convert
         scale: Scaling factor (default 10^8)
-        
+
     Returns:
         Scaled int64 value
     """
@@ -30,25 +28,25 @@ def float_to_scaled_int64(value: float, scale: int = PRICE_SCALE) -> np.int64:
 def scaled_int64_to_float(value: np.int64, scale: int = PRICE_SCALE) -> float:
     """
     Convert scaled int64 back to float.
-    
+
     Args:
         value: Scaled int64 value
         scale: Scaling factor (default 10^8)
-        
+
     Returns:
         Float value
     """
     return float(value) / scale
 
 
-def scaled_to_decimal128(value: Union[int, np.int64], scale: int = 8):
+def scaled_to_decimal128(value: int | np.int64, scale: int = 8):
     """
     Convert scaled int64 to PyArrow Decimal128.
-    
+
     Args:
         value: Scaled int64 value
         scale: Number of decimal places (default 8)
-        
+
     Returns:
         PyArrow Decimal128 scalar
     """
@@ -60,10 +58,10 @@ def scaled_to_decimal128(value: Union[int, np.int64], scale: int = 8):
 def decimal128_to_scaled(decimal_value) -> np.int64:
     """
     Convert PyArrow Decimal128 to scaled int64.
-    
+
     Args:
         decimal_value: PyArrow Decimal128 value
-        
+
     Returns:
         Scaled int64 value
     """
@@ -78,11 +76,11 @@ def calculate_mid_price(
 ) -> np.int64:
     """
     Calculate mid price from scaled bid/ask.
-    
+
     Args:
         bid_price: Best bid price (scaled)
         ask_price: Best ask price (scaled)
-        
+
     Returns:
         Mid price (scaled)
     """
@@ -96,11 +94,11 @@ def calculate_spread(
 ) -> np.int64:
     """
     Calculate spread from scaled bid/ask.
-    
+
     Args:
         bid_price: Best bid price (scaled)
         ask_price: Best ask price (scaled)
-        
+
     Returns:
         Spread (scaled)
     """

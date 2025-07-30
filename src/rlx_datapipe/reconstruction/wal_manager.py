@@ -34,10 +34,10 @@ class WALManager:
         wal_dir: Path,
         symbol: str,
         segment_size: int = 10000,  # Events per segment
-        max_segments: int = 10,     # Keep last N segments
+        max_segments: int = 10,  # Keep last N segments
     ):
         """Initialize WAL manager.
-        
+
         Args:
             wal_dir: Directory for WAL segments
             symbol: Trading symbol
@@ -87,7 +87,7 @@ class WALManager:
 
     def append_event(self, event_data: dict[str, Any]) -> None:
         """Append an event to the WAL.
-        
+
         Args:
             event_data: Event data to append
         """
@@ -194,7 +194,7 @@ class WALManager:
 
     def _create_done_marker(self, segment: WALSegment) -> None:
         """Create atomic DONE marker for segment.
-        
+
         Args:
             segment: WAL segment that was completed
         """
@@ -245,7 +245,7 @@ class WALManager:
 
     def recover_segments(self) -> list[WALSegment]:
         """Recover all valid WAL segments.
-        
+
         Returns:
             List of valid WAL segments in order
         """
@@ -291,10 +291,10 @@ class WALManager:
 
     def read_segment_events(self, segment: WALSegment) -> pd.DataFrame:
         """Read events from a WAL segment.
-        
+
         Args:
             segment: WAL segment to read
-            
+
         Returns:
             DataFrame of events
         """
@@ -306,7 +306,7 @@ class WALManager:
 
     def get_stats(self) -> dict[str, Any]:
         """Get WAL statistics.
-        
+
         Returns:
             Dictionary of WAL statistics
         """
@@ -322,4 +322,3 @@ class WALManager:
             "oldest_segment_id": segments[0].segment_id if segments else None,
             "newest_segment_id": segments[-1].segment_id if segments else None,
         }
-

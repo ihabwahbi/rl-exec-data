@@ -17,9 +17,12 @@
   - [Epic 1: Foundational Analysis](./epics.md#epic-1-foundational-analysis)
   - [Epic 2: Core Data Reconstruction Pipeline](./epics.md#epic-2-core-data-reconstruction-pipeline)
   - [Epic 3: Automated Fidelity Validation & Reporting](./epics.md#epic-3-automated-fidelity-validation-reporting)
-- [Technical Assumptions](./technical-assumptions.md)
+- [Technical Assumptions](./technical-assumptions.md) - **Constraints and guiding principles**
+- [Risk Register](./risk-register.md) - **Project risks and mitigation strategies**
+- [Learnings & Validations](./learnings-and-validations.md) - **Empirically proven metrics and insights**
 - [Research](./research/initial-research.md) - **Consolidated research findings**
 - [Research Impact Matrix](./research-impact-matrix.md) - **Deep research insights mapping**
+- [Validation Strategy](./validation-strategy.md) - **Comprehensive validation approach**
 - [Next Steps](./next-steps.md)
 - [Changelog](./changelog.md) - **Version history**
 

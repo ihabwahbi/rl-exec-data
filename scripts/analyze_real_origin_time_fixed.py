@@ -158,7 +158,7 @@ def save_report(results):
 def main():
     """Main analysis function."""
     # Find the real data file
-    data_file = Path("data/staging/raw/BINANCE_BTC-USDT_trades_20250715_20250717.parquet")
+    data_file = Path("data/staging/ready/BINANCE_BTC-USDT_trades_20240101_20240107.parquet")
 
     if not data_file.exists():
         logger.error(f"❌ Data file not found: {data_file}")

@@ -3,7 +3,7 @@
 import pytest
 import asyncio
 from unittest.mock import Mock, patch, AsyncMock, MagicMock
-from src.rlx_datapipe.capture.orderbook_sync import OrderBookSynchronizer, OrderBookSnapshot
+from rlx_datapipe.capture.orderbook_sync import OrderBookSynchronizer, OrderBookSnapshot
 
 
 class TestOrderBookSynchronizer:

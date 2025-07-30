@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import shutil
 import pytest
-from src.rlx_datapipe.capture.jsonl_writer import JSONLWriter
+from rlx_datapipe.capture.jsonl_writer import JSONLWriter
 
 
 class TestJSONLWriter:

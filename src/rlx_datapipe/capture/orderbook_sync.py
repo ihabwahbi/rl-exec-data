@@ -12,6 +12,7 @@ from loguru import logger
 @dataclass
 class OrderBookSnapshot:
     """Order book snapshot from REST API."""
+
     symbol: str
     last_update_id: int
     bids: list[list[str]]  # [[price, quantity], ...]
@@ -21,9 +22,11 @@ class OrderBookSnapshot:
 class OrderBookSynchronizer:
     """Synchronizes order book using REST snapshot and WebSocket updates."""
 
-    def __init__(self, symbol: str, rest_url: str = "https://api.binance.com/api/v3/depth"):
+    def __init__(
+        self, symbol: str, rest_url: str = "https://api.binance.com/api/v3/depth"
+    ):
         """Initialize order book synchronizer.
-        
+
         Args:
             symbol: Trading symbol (e.g., "BTCUSDT")
             rest_url: Binance REST API URL for depth endpoint
@@ -38,7 +41,7 @@ class OrderBookSynchronizer:
 
     def buffer_update(self, update: dict[str, Any]) -> None:
         """Buffer order book update from WebSocket.
-        
+
         Args:
             update: Order book update from WebSocket
         """
@@ -46,20 +49,17 @@ class OrderBookSynchronizer:
 
     async def fetch_snapshot(self, limit: int = 5000) -> OrderBookSnapshot:
         """Fetch order book snapshot from REST API.
-        
+
         Args:
             limit: Number of order book levels to fetch (max 5000)
-            
+
         Returns:
             OrderBookSnapshot
-            
+
         Raises:
             Exception: If failed to fetch snapshot
         """
-        params = {
-            "symbol": self.symbol,
-            "limit": limit
-        }
+        params = {"symbol": self.symbol, "limit": limit}
 
         try:
             async with aiohttp.ClientSession() as session:
@@ -73,10 +73,12 @@ class OrderBookSynchronizer:
                         symbol=self.symbol,
                         last_update_id=data["lastUpdateId"],
                         bids=data["bids"],
-                        asks=data["asks"]
+                        asks=data["asks"],
                     )
 
-                    logger.info(f"Fetched snapshot for {self.symbol}, lastUpdateId: {snapshot.last_update_id}")
+                    logger.info(
+                        f"Fetched snapshot for {self.symbol}, lastUpdateId: {snapshot.last_update_id}"
+                    )
                     return snapshot
 
         except Exception as e:
@@ -85,7 +87,7 @@ class OrderBookSynchronizer:
 
     def _check_synchronization(self) -> bool:
         """Check if buffered updates can be synchronized with snapshot.
-        
+
         Returns:
             True if synchronization successful, False otherwise
         """
@@ -102,7 +104,9 @@ class OrderBookSynchronizer:
             final_update_id = update["final_update_id"]
 
             if first_update_id <= self._snapshot.last_update_id + 1 <= final_update_id:
-                logger.info(f"Synchronized at update_id {self._snapshot.last_update_id}")
+                logger.info(
+                    f"Synchronized at update_id {self._snapshot.last_update_id}"
+                )
                 return True
 
             # If update is too old (final_update_id < lastUpdateId), discard it
@@ -112,8 +116,10 @@ class OrderBookSynchronizer:
 
             # If update is too new (first_update_id > lastUpdateId+1), we have a gap
             if first_update_id > self._snapshot.last_update_id + 1:
-                logger.warning(f"Gap detected: snapshot lastUpdateId={self._snapshot.last_update_id}, "
-                             f"update firstUpdateId={first_update_id}")
+                logger.warning(
+                    f"Gap detected: snapshot lastUpdateId={self._snapshot.last_update_id}, "
+                    f"update firstUpdateId={first_update_id}"
+                )
                 return False
 
         # No updates in buffer
@@ -121,7 +127,7 @@ class OrderBookSynchronizer:
 
     async def synchronize(self) -> bool:
         """Synchronize order book with REST snapshot and WebSocket updates.
-        
+
         Returns:
             True if synchronization successful, False if failed after max attempts
         """
@@ -129,7 +135,9 @@ class OrderBookSynchronizer:
 
         while self._sync_attempts < self._max_sync_attempts:
             self._sync_attempts += 1
-            logger.info(f"Synchronization attempt {self._sync_attempts}/{self._max_sync_attempts}")
+            logger.info(
+                f"Synchronization attempt {self._sync_attempts}/{self._max_sync_attempts}"
+            )
 
             try:
                 # Fetch REST snapshot
@@ -155,10 +163,10 @@ class OrderBookSynchronizer:
 
     def process_update(self, update: dict[str, Any]) -> dict[str, Any] | None:
         """Process order book update if synchronized.
-        
+
         Args:
             update: Order book update from parser
-            
+
         Returns:
             Update dict if synchronized and no gap, None otherwise
         """
@@ -171,8 +179,10 @@ class OrderBookSynchronizer:
         expected_id = self._snapshot.last_update_id + 1
 
         if update["first_update_id"] != expected_id:
-            logger.error(f"Sequence gap detected: expected {expected_id}, "
-                        f"got {update['first_update_id']}")
+            logger.error(
+                f"Sequence gap detected: expected {expected_id}, "
+                f"got {update['first_update_id']}"
+            )
             self._is_synced = False
             self._buffer.clear()
             self.buffer_update(update)

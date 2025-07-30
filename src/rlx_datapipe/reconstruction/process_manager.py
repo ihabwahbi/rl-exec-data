@@ -14,7 +14,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from multiprocessing import Process, Queue
-from typing import Any, Optional
+from typing import Any
 
 import psutil
 from loguru import logger
@@ -24,6 +24,7 @@ from .config import MultiSymbolConfig, SymbolConfig
 
 class WorkerState(Enum):
     """Worker process lifecycle states."""
+
     INITIALIZING = "initializing"
     RUNNING = "running"
     STOPPING = "stopping"
@@ -35,6 +36,7 @@ class WorkerState(Enum):
 @dataclass
 class WorkerHealth:
     """Health metrics for a worker process."""
+
     process: Process
     state: WorkerState
     last_heartbeat: float
@@ -48,6 +50,7 @@ class WorkerHealth:
 @dataclass
 class WorkerInfo:
     """Complete information about a worker."""
+
     symbol: str
     config: SymbolConfig
     queue: Queue
@@ -58,9 +61,11 @@ class WorkerInfo:
 class ProcessManager:
     """Manages multiple worker processes for multi-symbol processing."""
 
-    def __init__(self, config: MultiSymbolConfig, worker_target: Callable, output_dir: str):
+    def __init__(
+        self, config: MultiSymbolConfig, worker_target: Callable, output_dir: str
+    ):
         """Initialize the process manager.
-        
+
         Args:
             config: Multi-symbol configuration
             worker_target: Function to run in each worker process
@@ -76,7 +81,7 @@ class ProcessManager:
 
     def start_worker(self, symbol: str, symbol_config: SymbolConfig) -> None:
         """Start a new worker process for a symbol.
-        
+
         Args:
             symbol: Symbol identifier (e.g., 'BTC-USDT')
             symbol_config: Configuration for this symbol
@@ -92,22 +97,17 @@ class ProcessManager:
         process = Process(
             target=self._worker_wrapper,
             args=(symbol, queue, symbol_config, self.shutdown_event, self.output_dir),
-            name=f"Worker-{symbol}"
+            name=f"Worker-{symbol}",
         )
 
         # Create health tracking
         health = WorkerHealth(
-            process=process,
-            state=WorkerState.INITIALIZING,
-            last_heartbeat=time.time()
+            process=process, state=WorkerState.INITIALIZING, last_heartbeat=time.time()
         )
 
         # Store worker info
         self.workers[symbol] = WorkerInfo(
-            symbol=symbol,
-            config=symbol_config,
-            queue=queue,
-            health=health
+            symbol=symbol, config=symbol_config, queue=queue, health=health
         )
 
         # Start the process
@@ -120,10 +120,16 @@ class ProcessManager:
 
         logger.info(f"Started worker for {symbol} with PID {process.pid}")
 
-    def _worker_wrapper(self, symbol: str, queue: Queue, config: SymbolConfig,
-                       shutdown_event: multiprocessing.Event, output_dir: str) -> None:
+    def _worker_wrapper(
+        self,
+        symbol: str,
+        queue: Queue,
+        config: SymbolConfig,
+        shutdown_event: multiprocessing.Event,
+        output_dir: str,
+    ) -> None:
         """Wrapper function that runs in the worker process.
-        
+
         Args:
             symbol: Symbol identifier
             queue: Input queue for messages
@@ -144,7 +150,7 @@ class ProcessManager:
 
     def _set_cpu_affinity(self, pid: int, cpus: list[int]) -> None:
         """Set CPU affinity for a process.
-        
+
         Args:
             pid: Process ID
             cpus: List of CPU cores to bind to
@@ -158,12 +164,13 @@ class ProcessManager:
 
     def _set_memory_limit(self, limit_mb: int) -> None:
         """Set memory limit for current process.
-        
+
         Args:
             limit_mb: Memory limit in megabytes
         """
         try:
             import resource
+
             limit_bytes = limit_mb * 1024 * 1024
             resource.setrlimit(resource.RLIMIT_AS, (limit_bytes, limit_bytes))
             logger.debug(f"Set memory limit to {limit_mb}MB")
@@ -178,7 +185,7 @@ class ProcessManager:
 
     def stop_worker(self, symbol: str, timeout: float = 30.0) -> None:
         """Stop a worker process gracefully.
-        
+
         Args:
             symbol: Symbol identifier
             timeout: Seconds to wait for graceful shutdown
@@ -217,13 +224,15 @@ class ProcessManager:
 
         # Stop each worker
         for symbol in list(self.workers.keys()):
-            self.stop_worker(symbol, timeout=self.config.process_manager.shutdown_timeout_seconds)
+            self.stop_worker(
+                symbol, timeout=self.config.process_manager.shutdown_timeout_seconds
+            )
 
         self.workers.clear()
 
     def restart_worker(self, symbol: str) -> None:
         """Restart a crashed worker.
-        
+
         Args:
             symbol: Symbol identifier
         """
@@ -235,12 +244,17 @@ class ProcessManager:
         worker.health.restart_count += 1
 
         # Check restart limit
-        if worker.health.restart_count > self.config.process_manager.max_restart_attempts:
+        if (
+            worker.health.restart_count
+            > self.config.process_manager.max_restart_attempts
+        ):
             logger.error(f"Worker {symbol} exceeded max restart attempts")
             worker.health.state = WorkerState.STOPPED
             return
 
-        logger.info(f"Restarting worker {symbol} (attempt {worker.health.restart_count})")
+        logger.info(
+            f"Restarting worker {symbol} (attempt {worker.health.restart_count})"
+        )
         worker.health.state = WorkerState.RESTARTING
 
         # Stop the old process
@@ -259,8 +273,7 @@ class ProcessManager:
             return
 
         self._health_monitor_process = Process(
-            target=self._health_monitor_loop,
-            name="HealthMonitor"
+            target=self._health_monitor_loop, name="HealthMonitor"
         )
         self._health_monitor_process.start()
         logger.info("Started health monitor")
@@ -291,7 +304,9 @@ class ProcessManager:
             try:
                 if worker.process_id:
                     proc = psutil.Process(worker.process_id)
-                    worker.health.memory_usage = proc.memory_info().rss / 1024 / 1024  # MB
+                    worker.health.memory_usage = (
+                        proc.memory_info().rss / 1024 / 1024
+                    )  # MB
                     worker.health.cpu_percent = proc.cpu_percent(interval=0.1)
             except psutil.NoSuchProcess:
                 logger.warning(f"Cannot find process for worker {symbol}")
@@ -302,12 +317,12 @@ class ProcessManager:
                 if current_time - worker.health.last_heartbeat > 10:
                     worker.health.state = WorkerState.RUNNING
 
-    def get_worker_queue(self, symbol: str) -> Optional[Queue]:
+    def get_worker_queue(self, symbol: str) -> Queue | None:
         """Get the input queue for a worker.
-        
+
         Args:
             symbol: Symbol identifier
-            
+
         Returns:
             Queue for the worker, or None if not found
         """
@@ -316,7 +331,7 @@ class ProcessManager:
 
     def get_worker_stats(self) -> dict[str, dict[str, Any]]:
         """Get statistics for all workers.
-        
+
         Returns:
             Dictionary of worker statistics by symbol
         """
@@ -329,7 +344,7 @@ class ProcessManager:
                 "restart_count": worker.health.restart_count,
                 "memory_mb": worker.health.memory_usage,
                 "cpu_percent": worker.health.cpu_percent,
-                "process_id": worker.process_id
+                "process_id": worker.process_id,
             }
         return stats
 
@@ -366,7 +381,7 @@ class ProcessManager:
 
     def add_symbol(self, symbol: str, config: SymbolConfig) -> None:
         """Dynamically add a new symbol for processing.
-        
+
         Args:
             symbol: Symbol identifier
             config: Symbol configuration
@@ -380,7 +395,7 @@ class ProcessManager:
 
     def remove_symbol(self, symbol: str) -> None:
         """Dynamically remove a symbol from processing.
-        
+
         Args:
             symbol: Symbol identifier
         """
@@ -391,4 +406,3 @@ class ProcessManager:
         logger.info(f"Removing symbol: {symbol}")
         self.stop_worker(symbol)
         del self.workers[symbol]
-

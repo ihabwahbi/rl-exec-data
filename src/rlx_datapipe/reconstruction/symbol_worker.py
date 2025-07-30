@@ -11,9 +11,9 @@ import asyncio
 import multiprocessing
 import signal
 import time
+from decimal import Decimal
 from multiprocessing import Event, Queue
 from pathlib import Path
-from decimal import Decimal
 from typing import Any
 
 from loguru import logger
@@ -40,7 +40,7 @@ class SymbolWorker:
         config: SymbolConfig,
         shutdown_event: Event,
         output_dir: Path,
-        replay_config: ReplayOptimizationConfig | None = None
+        replay_config: ReplayOptimizationConfig | None = None,
     ):
         """Initialize the symbol worker.
 
@@ -63,7 +63,7 @@ class SymbolWorker:
         self.event_stream: UnifiedEventStreamEnhanced | None = None
         self.data_sink: DataSink | None = None
         self.event_queue: asyncio.Queue | None = None
-        
+
         # State provider for unified checkpointing
         self.state_provider = PipelineStateProvider(symbol)
         self.checkpoint_manager = None
@@ -100,8 +100,7 @@ class SymbolWorker:
             use_memory_mapping=True,
         )
         self.event_stream = UnifiedEventStreamEnhanced(
-            symbol=self.symbol,
-            config=stream_config
+            symbol=self.symbol, config=stream_config
         )
 
         # Create data sink with queue
@@ -110,14 +109,15 @@ class SymbolWorker:
             symbol=self.symbol,
             batch_size=5000,
             queue_size=5000,
-            max_file_size_mb=400
+            max_file_size_mb=400,
         )
 
         # Start data sink
         await self.data_sink.start()
-        
+
         # Initialize checkpoint manager with enhanced features
         from .checkpoint_manager import CheckpointManager
+
         self.checkpoint_manager = CheckpointManager(
             checkpoint_dir=symbol_output_dir / "checkpoints",
             symbol=self.symbol,
@@ -125,16 +125,18 @@ class SymbolWorker:
             time_interval=300.0,  # 5 minutes
             event_interval=1_000_000,  # 1M events
         )
-        
+
         # Set up state provider references
         self.state_provider.set_order_book_engine(self.event_stream.order_book_engine)
         self.state_provider.set_data_sink(self.data_sink)
         self.checkpoint_manager.set_state_provider(self.state_provider)
-        
+
         # Start checkpoint manager
         await self.checkpoint_manager.start()
 
-        logger.info(f"Pipeline initialized for {self.symbol} with checkpointing enabled")
+        logger.info(
+            f"Pipeline initialized for {self.symbol} with checkpointing enabled"
+        )
 
     async def _process_message(self, routed_msg: RoutedMessage) -> None:
         """Process a single message through the pipeline.
@@ -153,10 +155,10 @@ class SymbolWorker:
             for event in unified_events:
                 await self.event_queue.put(event)
                 self.messages_processed += 1
-            
+
             # Update state provider
             self.state_provider.increment_events_processed(len(unified_events))
-            
+
             # Record events for checkpoint triggers
             if self.checkpoint_manager:
                 await self.checkpoint_manager.record_events(len(unified_events))
@@ -165,12 +167,14 @@ class SymbolWorker:
             logger.error(f"Error processing message for {self.symbol}: {e}")
             self.errors_count += 1
 
-    async def _parse_and_process_message(self, message: Any) -> list[UnifiedMarketEvent]:
+    async def _parse_and_process_message(
+        self, message: Any
+    ) -> list[UnifiedMarketEvent]:
         """Parse message and process through order book if needed.
-        
+
         Args:
             message: Raw message from data source
-            
+
         Returns:
             List of unified market events
         """
@@ -190,7 +194,7 @@ class SymbolWorker:
                     self.event_stream.order_book_engine.reset_from_snapshot(
                         message.get("update_id", 0),
                         message.get("bids", []),
-                        message.get("asks", [])
+                        message.get("asks", []),
                     )
 
             elif event_type == "BOOK_DELTA" or "delta" in event_type.lower():
@@ -200,7 +204,7 @@ class SymbolWorker:
                         update_id=message.get("update_id", 0),
                         side=message.get("side", ""),
                         price=float(message.get("price", 0)),
-                        quantity=float(message.get("new_quantity", 0))
+                        quantity=float(message.get("new_quantity", 0)),
                     )
                 events.append(self._create_delta_event(message))
 
@@ -219,7 +223,7 @@ class SymbolWorker:
             trade_id=message.get("trade_id", message.get("id")),
             trade_price=Decimal(str(message.get("price", 0))),
             trade_quantity=Decimal(str(message.get("quantity", 0))),
-            trade_side=message.get("side", "UNKNOWN")
+            trade_side=message.get("side", "UNKNOWN"),
         )
 
     def _create_snapshot_event(self, message: dict) -> UnifiedMarketEvent:
@@ -233,16 +237,24 @@ class SymbolWorker:
                 if isinstance(bid, (list, tuple)) and len(bid) >= 2:
                     bids.append((Decimal(str(bid[0])), Decimal(str(bid[1]))))
                 elif isinstance(bid, dict):
-                    bids.append((Decimal(str(bid.get("price", 0))),
-                               Decimal(str(bid.get("quantity", 0)))))
+                    bids.append(
+                        (
+                            Decimal(str(bid.get("price", 0))),
+                            Decimal(str(bid.get("quantity", 0))),
+                        )
+                    )
 
         if "asks" in message:
             for ask in message["asks"]:
                 if isinstance(ask, (list, tuple)) and len(ask) >= 2:
                     asks.append((Decimal(str(ask[0])), Decimal(str(ask[1]))))
                 elif isinstance(ask, dict):
-                    asks.append((Decimal(str(ask.get("price", 0))),
-                               Decimal(str(ask.get("quantity", 0)))))
+                    asks.append(
+                        (
+                            Decimal(str(ask.get("price", 0))),
+                            Decimal(str(ask.get("quantity", 0))),
+                        )
+                    )
 
         return UnifiedMarketEvent(
             event_timestamp=int(message.get("origin_time", time.time() * 1e9)),
@@ -250,7 +262,7 @@ class SymbolWorker:
             update_id=message.get("update_id"),
             bids=bids,
             asks=asks,
-            is_snapshot=True
+            is_snapshot=True,
         )
 
     def _create_delta_event(self, message: dict) -> UnifiedMarketEvent:
@@ -261,7 +273,7 @@ class SymbolWorker:
             update_id=message.get("update_id"),
             delta_side=message.get("side", "UNKNOWN").upper(),
             delta_price=Decimal(str(message.get("price", 0))),
-            delta_quantity=Decimal(str(message.get("new_quantity", 0)))
+            delta_quantity=Decimal(str(message.get("new_quantity", 0))),
         )
 
     async def _receive_loop(self) -> None:
@@ -292,7 +304,7 @@ class SymbolWorker:
 
     async def _checkpoint(self) -> None:
         """Perform manual checkpoint operation.
-        
+
         Note: This is now handled by the checkpoint manager automatically.
         This method is kept for manual checkpoint requests.
         """
@@ -353,7 +365,7 @@ def symbol_worker_entry_point(
     config: SymbolConfig,
     shutdown_event: Event,
     output_dir: str,
-    replay_config_dict: dict | None = None
+    replay_config_dict: dict | None = None,
 ) -> None:
     """Entry point for the worker process.
 
@@ -371,10 +383,7 @@ def symbol_worker_entry_point(
     # Configure logging for this process
     logger.remove()
     logger.add(
-        f"logs/worker_{symbol}.log",
-        rotation="100 MB",
-        retention="7 days",
-        level="INFO"
+        f"logs/worker_{symbol}.log", rotation="100 MB", retention="7 days", level="INFO"
     )
     logger.add(lambda msg: print(f"[{symbol}] {msg}"), level="INFO")
 
@@ -390,10 +399,8 @@ def symbol_worker_entry_point(
         config=config,
         shutdown_event=shutdown_event,
         output_dir=Path(output_dir),
-        replay_config=replay_config
+        replay_config=replay_config,
     )
 
     # Run async event loop
     asyncio.run(worker.run())
-
-

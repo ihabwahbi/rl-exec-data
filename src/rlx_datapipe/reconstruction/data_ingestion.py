@@ -4,6 +4,7 @@ Data ingestion module for loading Crypto Lake data formats.
 Handles reading trades, book snapshots, and book deltas with proper schema validation
 and decimal precision preservation.
 """
+
 import asyncio
 from collections.abc import AsyncIterator, Iterator
 from enum import Enum
@@ -19,6 +20,7 @@ from .decimal_utils import ensure_decimal_precision
 
 class EventType(Enum):
     """Market event types."""
+
     TRADE = "TRADE"
     BOOK_SNAPSHOT = "BOOK_SNAPSHOT"
     BOOK_DELTA = "BOOK_DELTA"
@@ -59,7 +61,10 @@ class TradesReader(DataIngestionBase):
 
     REQUIRED_COLUMNS: ClassVar[list[str]] = ["origin_time", "price", "quantity", "side"]
     OPTIONAL_COLUMNS: ClassVar[list[str]] = [
-        "trade_id", "timestamp", "symbol", "exchange"
+        "trade_id",
+        "timestamp",
+        "symbol",
+        "exchange",
     ]
 
     def read(
@@ -149,7 +154,9 @@ class BookSnapshotsReader(DataIngestionBase):
             self._validate_required_columns(df, self.REQUIRED_COLUMNS)
 
             # Note: bids and asks are already arrays, no decimal conversion needed here
-            df = df.with_columns(pl.lit(EventType.BOOK_SNAPSHOT.value).alias("event_type"))
+            df = df.with_columns(
+                pl.lit(EventType.BOOK_SNAPSHOT.value).alias("event_type")
+            )
 
             yield df
 
@@ -158,7 +165,11 @@ class BookDeltasReader(DataIngestionBase):
     """Reader for Crypto Lake book deltas data."""
 
     REQUIRED_COLUMNS: ClassVar[list[str]] = [
-        "origin_time", "update_id", "side", "price", "new_quantity"
+        "origin_time",
+        "update_id",
+        "side",
+        "price",
+        "new_quantity",
     ]
     OPTIONAL_COLUMNS: ClassVar[list[str]] = ["symbol", "exchange", "sequence"]
 
@@ -211,7 +222,7 @@ class DataIngestion:
 
     def __init__(self, input_path: Path, manifest_path: Path | None = None):
         """Initialize data ingestion.
-        
+
         Args:
             input_path: Path to input data (file or directory)
             manifest_path: Optional manifest file specifying data files
@@ -243,7 +254,7 @@ class DataIngestion:
 
     async def read_messages(self) -> AsyncIterator[dict[str, Any]]:
         """Read messages from data files in streaming fashion.
-        
+
         Yields:
             Dictionary containing message data with event_type field
         """
@@ -287,11 +298,17 @@ class DataIngestion:
             sample_df = pl.read_parquet(data_file, n_rows=10)
             columns = set(sample_df.columns)
 
-            if "trade_id" in columns or ("price" in columns and "quantity" in columns and "side" in columns):
+            if "trade_id" in columns or (
+                "price" in columns and "quantity" in columns and "side" in columns
+            ):
                 return TradesReader(data_file)
             if "bids" in columns and "asks" in columns:
                 return BookSnapshotsReader(data_file)
-            if "update_id" in columns and "side" in columns and "new_quantity" in columns:
+            if (
+                "update_id" in columns
+                and "side" in columns
+                and "new_quantity" in columns
+            ):
                 return BookDeltasReader(data_file)
 
         except Exception as e:
@@ -313,4 +330,3 @@ class DataIngestion:
 # Aliases for backward compatibility
 BookDeltaV2Reader = BookDeltasReader
 BookSnapshotReader = BookSnapshotsReader
-

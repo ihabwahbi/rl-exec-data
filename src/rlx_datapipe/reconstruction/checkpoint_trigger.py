@@ -11,6 +11,7 @@ from loguru import logger
 
 class TriggerType(Enum):
     """Types of checkpoint triggers."""
+
     TIME_BASED = "time_based"
     EVENT_BASED = "event_based"
     MANUAL = "manual"
@@ -44,7 +45,7 @@ class CheckpointTrigger:
         checkpoint_callback: Callable[[], asyncio.Task],
     ):
         """Initialize checkpoint trigger.
-        
+
         Args:
             config: Trigger configuration
             checkpoint_callback: Async callback to invoke for checkpointing
@@ -78,7 +79,9 @@ class CheckpointTrigger:
         # Start time-based trigger if enabled
         if self.config.enable_time_trigger:
             self._timer_task = asyncio.create_task(self._time_trigger_loop())
-            logger.info(f"Started time-based trigger (interval: {self.config.time_interval}s)")
+            logger.info(
+                f"Started time-based trigger (interval: {self.config.time_interval}s)"
+            )
 
     async def stop(self) -> None:
         """Stop the checkpoint trigger."""
@@ -99,7 +102,7 @@ class CheckpointTrigger:
 
     async def record_events(self, event_count: int) -> None:
         """Record processed events and check for event-based trigger.
-        
+
         Args:
             event_count: Number of events processed
         """
@@ -118,7 +121,7 @@ class CheckpointTrigger:
 
     async def trigger_manual_checkpoint(self) -> bool:
         """Manually trigger a checkpoint.
-        
+
         Returns:
             True if checkpoint was triggered, False if skipped due to grace period
         """
@@ -141,10 +144,10 @@ class CheckpointTrigger:
 
     async def _trigger_checkpoint(self, trigger_type: TriggerType) -> bool:
         """Trigger a checkpoint if grace period allows.
-        
+
         Args:
             trigger_type: Type of trigger causing the checkpoint
-            
+
         Returns:
             True if checkpoint was triggered, False if skipped
         """
@@ -152,8 +155,10 @@ class CheckpointTrigger:
         time_since_last = current_time - self.last_checkpoint_time
 
         # Check grace period (except for shutdown triggers)
-        if (trigger_type != TriggerType.SHUTDOWN and
-            time_since_last < self.config.min_checkpoint_interval):
+        if (
+            trigger_type != TriggerType.SHUTDOWN
+            and time_since_last < self.config.min_checkpoint_interval
+        ):
             logger.debug(
                 f"Skipping {trigger_type.value} checkpoint: "
                 f"only {time_since_last:.1f}s since last checkpoint "
@@ -195,4 +200,3 @@ class CheckpointTrigger:
                 self.total_events_processed - self.last_checkpoint_event_count
             ),
         }
-

@@ -3,6 +3,7 @@ Performance benchmarking utilities for the reconstruction pipeline.
 
 Provides tools to measure and validate performance against baselines.
 """
+
 import os
 import time
 from pathlib import Path
@@ -17,8 +18,8 @@ class PerformanceBenchmark:
 
     # Baseline performance targets from validated results
     BASELINE_THROUGHPUT = 336_000  # messages/second
-    BASELINE_READ_SPEED_MB = 200   # MB/second minimum
-    MEMORY_LIMIT_GB = 1.0          # Maximum memory usage
+    BASELINE_READ_SPEED_MB = 200  # MB/second minimum
+    MEMORY_LIMIT_GB = 1.0  # Maximum memory usage
 
     def __init__(self):
         """Initialize performance benchmark."""
@@ -26,10 +27,7 @@ class PerformanceBenchmark:
         self.results = {}
 
     def benchmark_reader(
-        self,
-        reader_func,
-        data_path: Path,
-        batch_size: int | None = None
+        self, reader_func, data_path: Path, batch_size: int | None = None
     ) -> dict[str, Any]:
         """Benchmark a data reader function.
 
@@ -86,16 +84,15 @@ class PerformanceBenchmark:
             "memory_peak_gb": memory_after,
             "meets_baseline_throughput": throughput >= self.BASELINE_THROUGHPUT,
             "meets_baseline_read_speed": read_speed_mb >= self.BASELINE_READ_SPEED_MB,
-            "meets_memory_limit": memory_after <= self.MEMORY_LIMIT_GB
+            "meets_memory_limit": memory_after <= self.MEMORY_LIMIT_GB,
         }
-
 
     def benchmark_unification(
         self,
         unified_stream,
         trades_path: Path | None = None,
         book_snapshots_path: Path | None = None,
-        book_deltas_path: Path | None = None
+        book_deltas_path: Path | None = None,
     ) -> dict[str, Any]:
         """Benchmark the unification process.
 
@@ -118,7 +115,7 @@ class PerformanceBenchmark:
         df = unified_stream.merge_streams(
             trades_path=trades_path,
             book_snapshots_path=book_snapshots_path,
-            book_deltas_path=book_deltas_path
+            book_deltas_path=book_deltas_path,
         )
 
         # End timing
@@ -148,9 +145,8 @@ class PerformanceBenchmark:
             "time_range_seconds": time_range_seconds,
             "events_by_type": unified_stream._event_counts,
             "meets_baseline_throughput": throughput >= self.BASELINE_THROUGHPUT,
-            "meets_memory_limit": memory_after <= self.MEMORY_LIMIT_GB
+            "meets_memory_limit": memory_after <= self.MEMORY_LIMIT_GB,
         }
-
 
     def log_results(self, results: dict[str, Any], test_name: str) -> None:
         """Log benchmark results.
@@ -173,4 +169,3 @@ class PerformanceBenchmark:
                 logger.info(f"{key}: {value}")
 
         logger.info(f"{'='*60}\n")
-

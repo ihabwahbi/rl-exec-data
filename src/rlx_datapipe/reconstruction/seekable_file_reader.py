@@ -12,7 +12,7 @@ class SeekableFileReader:
 
     def __init__(self, file_path: Path):
         """Initialize seekable file reader.
-        
+
         Args:
             file_path: Path to file to read
         """
@@ -43,10 +43,10 @@ class SeekableFileReader:
 
     def seek(self, offset: int) -> bool:
         """Seek to specific offset in file.
-        
+
         Args:
             offset: Byte offset to seek to
-            
+
         Returns:
             True if seek successful
         """
@@ -85,7 +85,7 @@ class SeekableFileReader:
 
     def read_line(self) -> str | None:
         """Read next line from file.
-        
+
         Returns:
             Line content or None if EOF
         """
@@ -107,7 +107,7 @@ class SeekableFileReader:
 
     def read_lines_iter(self) -> Iterator[str]:
         """Iterate over lines in file.
-        
+
         Yields:
             Lines from file
         """
@@ -119,7 +119,7 @@ class SeekableFileReader:
 
     def get_position(self) -> tuple[str, int, int]:
         """Get current position in file.
-        
+
         Returns:
             Tuple of (filename, offset, line_number)
         """
@@ -127,10 +127,10 @@ class SeekableFileReader:
 
     def skip_lines(self, count: int) -> int:
         """Skip specified number of lines.
-        
+
         Args:
             count: Number of lines to skip
-            
+
         Returns:
             Number of lines actually skipped
         """
@@ -145,10 +145,10 @@ class SeekableFileReader:
 
     def find_update_id(self, target_update_id: int) -> bool:
         """Seek to position after specified update_id.
-        
+
         Args:
             target_update_id: Update ID to find
-            
+
         Returns:
             True if found and positioned after
         """
@@ -202,4 +202,3 @@ class SeekableFileReader:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.close()
-

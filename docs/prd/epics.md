@@ -1,6 +1,10 @@
 # Epics
 
-The work is structured into four logical epics, with Epic 0 (Data Acquisition) as the critical prerequisite that ensures all subsequent work uses real market data.
+> **📌 MASTER DOCUMENT**: This is the definitive source of truth for project scope and sequencing. All other PRD documents must align with the plan detailed here.
+
+**CURRENT STATUS**: Epics 0-2 are COMPLETE. Epic 3 (Automated Fidelity Validation & Reporting) is the current primary focus, aligned with our primary goal of achieving high-fidelity validation.
+
+The work is structured into four logical epics, progressing from data acquisition through validation:
 
 ## **Epic 0: Data Acquisition** ✅ **COMPLETE**
 
@@ -84,17 +88,17 @@ The work is structured into four logical epics, with Epic 0 (Data Acquisition) a
 * ✅ **Story 2.5: Checkpointing & Recovery:** COW checkpointing operational with <100ms snapshots.
     * ✅ [ASSUMPTION][R-OAI-03] Non-blocking persistence validated with <1% performance impact
 
-## **Epic 3: Automated Fidelity Validation & Reporting** 🟢 **READY TO START**
+## **Epic 3: Automated Fidelity Validation & Reporting** 🔴 **CURRENT PRIORITY - IN PROGRESS**
 
-*Goal: To build the automated quality assurance framework that proves the backtesting data is a faithful replica of the live market.*
+*Goal: To build the automated quality assurance framework that proves the backtesting data is a faithful replica of the live market. This is the critical deliverable for achieving our primary goal of high-fidelity validation.*
 
 **PREREQUISITE**: ✅ Epic 2 pipeline complete. The ValidationFramework from Story 1.3 provides a strong foundation with K-S tests, power law validation, and streaming support that can be extended for comprehensive fidelity reporting.
 
-**CRITICAL UPDATE**: Epic 2 review revealed FidelityReporter component is 0% implemented. Only validation framework foundation exists. Epic 3 scope has increased ~2x with new required stories.
+**CRITICAL CONTEXT**: Epic 2 review revealed FidelityReporter component needs to be built from scratch. The validation framework foundation from Epic 1 provides a strong starting point, but full implementation is required. This epic represents the core value delivery for the project.
 
 ### Updated Story List
 
-* **Story 3.0: FidelityReporter Foundation [NEW - BLOCKING]:** Implement the base FidelityReporter component that was identified as missing:
+* **Story 3.0: FidelityReporter Foundation [BLOCKING - FIRST PRIORITY]:** Implement the base FidelityReporter component that forms the foundation for all validation:
     * Build pluggable metric architecture  
     * Create streaming and batch computation support
     * Implement report generation framework (HTML/PDF/Dashboard)

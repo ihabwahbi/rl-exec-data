@@ -12,7 +12,7 @@ import polars as pl
 
 def inspect_data():
     """Inspect the real data file."""
-    data_file = Path("data/staging/raw/BINANCE_BTC-USDT_trades_20250715_20250717.parquet")
+    data_file = Path("data/staging/ready/BINANCE_BTC-USDT_trades_20240101_20240107.parquet")
 
     print(f"📁 Inspecting: {data_file}")
 

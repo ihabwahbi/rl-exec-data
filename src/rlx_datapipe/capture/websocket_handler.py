@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import ssl
 import time
 from collections.abc import Callable
 
@@ -20,10 +21,10 @@ class WebSocketHandler:
         on_connect: Callable[[], None] | None = None,
         on_disconnect: Callable[[], None] | None = None,
         max_reconnect_attempts: int = 5,
-        reconnect_delay: float = 5.0
+        reconnect_delay: float = 5.0,
     ):
         """Initialize WebSocket handler.
-        
+
         Args:
             url: WebSocket URL to connect to
             on_message: Callback for handling messages (message_dict, ns_timestamp)
@@ -45,7 +46,13 @@ class WebSocketHandler:
     async def connect(self) -> None:
         """Establish WebSocket connection."""
         try:
-            self._websocket = await websockets.connect(self.url)
+            # Create SSL context that doesn't verify certificates
+            # Note: Only for testing/development - not for production
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            
+            self._websocket = await websockets.connect(self.url, ssl=ssl_context)
             self._reconnect_count = 0
             logger.info(f"Connected to WebSocket: {self.url}")
 
@@ -69,7 +76,7 @@ class WebSocketHandler:
 
     async def _handle_message(self, message: str) -> None:
         """Process incoming WebSocket message.
-        
+
         Args:
             message: Raw message string from WebSocket
         """
@@ -89,7 +96,7 @@ class WebSocketHandler:
 
     async def _reconnect(self) -> bool:
         """Attempt to reconnect to WebSocket.
-        
+
         Returns:
             True if reconnection successful, False otherwise
         """
@@ -99,7 +106,9 @@ class WebSocketHandler:
             logger.error("Maximum reconnection attempts reached")
             return False
 
-        logger.info(f"Reconnection attempt {self._reconnect_count}/{self.max_reconnect_attempts}")
+        logger.info(
+            f"Reconnection attempt {self._reconnect_count}/{self.max_reconnect_attempts}"
+        )
         await asyncio.sleep(self.reconnect_delay)
 
         try:
@@ -142,4 +151,3 @@ class WebSocketHandler:
         """Stop the WebSocket handler."""
         self._running = False
         logger.info("Stopping WebSocket handler")
-

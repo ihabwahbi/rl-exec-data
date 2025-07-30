@@ -19,13 +19,10 @@ def configure_logging():
         format=nanosecond_formatter,
         rotation="1 day",
         retention="7 days",
-        level="INFO"
+        level="INFO",
     )
     logger.add(
-        lambda msg: print(msg, end=""),
-        format=nanosecond_formatter,
-        level="INFO"
+        lambda msg: print(msg, end=""), format=nanosecond_formatter, level="INFO"
     )
 
     return logger
-
