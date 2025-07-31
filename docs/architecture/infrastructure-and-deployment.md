@@ -1,5 +1,8 @@
 # Infrastructure and Deployment
 
+**Last Updated**: 2025-07-31  
+**Status**: Refined to focus on infrastructure, deployment, and operations
+
 ## Infrastructure
 
 This project is designed to run entirely on a **local machine**. No cloud infrastructure (e.g., AWS, Azure, GCP) is required for the execution of this data pipeline POC.
@@ -176,28 +179,7 @@ Metrics are exported in OpenTelemetry format to enable integration with various 
 - Prometheus push gateway support (optional)
 - Custom webhook endpoints for alerting
 
-## Security Requirements
+## Related Documentation
 
-### API Key and Credential Management
+For security requirements including API key management, data encryption, and access control, see the comprehensive [Security Architecture](./security.md) document.
 
-* **Storage:** All API keys and credentials must be stored in `.env` files, never in code
-* **Access:** Use environment variable loading with validation at startup
-* **Logging:** Implement credential scrubbing in all log outputs using regex patterns
-* **Git:** `.env` files must be in `.gitignore` with `.env.example` templates
-
-### Data Encryption
-
-* **At Rest:** 
-  - Golden sample captures from LiveCapture encrypted using AES-256
-  - Encryption keys derived from master key in `.env`
-  - Optional full dataset encryption for sensitive deployments
-
-* **In Transit:**
-  - WebSocket connections use TLS 1.3
-  - No unencrypted data transmission
-
-### Access Control
-
-* **File Permissions:** Output directories restricted to user-only access (700)
-* **Process Isolation:** Each component runs with minimal required permissions
-* **Audit Trail:** All data access logged with timestamps and component IDs

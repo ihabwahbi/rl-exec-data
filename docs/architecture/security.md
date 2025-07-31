@@ -1,7 +1,8 @@
 # Security Architecture
 
 **Created**: 2025-07-30  
-**Status**: Initial Design  
+**Last Updated**: 2025-07-31  
+**Status**: Enhanced with operational security requirements  
 **Compliance**: Aligned with MiFID II requirements
 
 ## Overview
@@ -47,12 +48,26 @@ pipeline_access:
       viewer:
         - read: fidelity reports
         - execute: none
+        
+  file_permissions:
+    output_directories: "700 (user-only access)"
+    process_isolation: "Each component runs with minimal required permissions"
+    audit_trail: "All data access logged with timestamps and component IDs"
 ```
 
 ## Data Protection
 
 ### Encryption at Rest
 All sensitive data is encrypted using industry-standard algorithms:
+
+- **Golden sample captures**: Encrypted using AES-256
+- **Encryption keys**: Derived from master key in `.env`
+- **Optional**: Full dataset encryption for sensitive deployments
+
+### Encryption in Transit
+- **WebSocket connections**: Use TLS 1.3
+- **API communications**: HTTPS only
+- **Policy**: No unencrypted data transmission
 
 ```python
 # Golden Sample Encryption
@@ -136,16 +151,22 @@ secrets_management:
       method: ".env files"
       encryption: "git-crypt"
       rotation: "On demand"
+      git_safety: ".env in .gitignore with .env.example templates"
       
     production:
       method: "Environment variables"
       source: "CI/CD pipeline"
       rotation: "Automated quarterly"
+      validation: "At startup with immediate failure on missing"
       
   required_secrets:
     - CRYPTO_LAKE_API_KEY
     - ENCRYPTION_KEY
     - BINANCE_WS_ENDPOINT
+    
+  logging_safety:
+    - credential_scrubbing: "Regex patterns in all log outputs"
+    - never_log: ["passwords", "api_keys", "tokens"]
     
   best_practices:
     - never_commit: "Secrets to version control"

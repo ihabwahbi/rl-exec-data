@@ -1,11 +1,34 @@
 # Data Models
 
-**Last Updated**: 2025-07-22  
+**Last Updated**: 2025-07-31  
 **Status**: Updated with validated schemas from Epic 0 and Epic 1 completion
 
 The pipeline handles three primary input schemas from Crypto Lake (validated during Epic 0 implementation) and one unified output schema for the backtesting environment.
 
 ## Data Precision Strategy
+
+**Status**: Validated through Epic 1 Story 1.2.5
+
+### Executive Summary
+
+The expert review correctly identified that Polars decimal128 support is experimental and may not meet our performance requirements. This section defines our decimal handling strategy with clear decision criteria and implementation paths.
+
+**Validation Results**: Story 1.2.5 tested both decimal128 and int64 pips approaches. Decimal128 operations completed without errors and are recommended as the primary approach, with int64 pips as a proven fallback strategy.
+
+### The Precision Challenge
+
+#### Requirements
+- **No precision loss**: Critical for small-quantity symbols (e.g., SOL-USDT)
+- **Performance**: Must sustain 100k events/second
+- **Memory efficiency**: Operate within 28GB constraint
+- **Determinism**: Identical results across runs
+
+#### The Problem
+- Float64 causes rounding errors: `0.123456789` → `0.12345679` 
+- Decimal128 in Polars is experimental and may panic on operations
+- String storage is memory-inefficient and slow
+
+### Implementation Strategy
 
 **Storage Layer**: All price and quantity fields are stored as `decimal128(38,18)` in Parquet files to prevent any precision loss, especially critical for small-quantity symbols like SOL-USDT.
 
@@ -13,10 +36,104 @@ The pipeline handles three primary input schemas from Crypto Lake (validated dur
 
 **ML Input Layer**: Convert to float32 only at the final step when feeding data to the RL agent, as neural networks require floating-point inputs. Implement a "tensor adapter" that validates max abs(price) and quantity ranges before casting to prevent silent overflow on exotic pairs.
 
-**Fallback Strategy**: If Polars decimal128 operations fail performance requirements, use int64 "pips" representation:
-- Store prices as `int64` with implicit 8 decimal places (1 BTC = 100,000,000 pips)
-- Store quantities as `int64` with symbol-specific decimal scaling
-- Convert to decimal128 only for final output, maintaining precision throughout processing
+### Primary Approach: Int64 Pips (Fallback Strategy)
+
+If Polars decimal128 operations fail performance requirements, use int64 "pips" representation:
+
+```python
+class PipsConverter:
+    """Convert decimal prices/quantities to int64 pips."""
+    
+    # Symbol-specific decimal places
+    PRICE_DECIMALS = {
+        'BTC-USDT': 2,   # $0.01 precision
+        'ETH-USDT': 2,   # $0.01 precision  
+        'SOL-USDT': 4,   # $0.0001 precision
+        'SHIB-USDT': 8,  # $0.00000001 precision
+    }
+    
+    QUANTITY_DECIMALS = {
+        'BTC-USDT': 8,   # 0.00000001 BTC (1 satoshi)
+        'ETH-USDT': 8,   # 0.00000001 ETH
+        'SOL-USDT': 6,   # 0.000001 SOL
+        'SHIB-USDT': 0,  # 1 SHIB (integer only)
+    }
+    
+    def __init__(self, symbol: str):
+        self.symbol = symbol
+        self.price_multiplier = 10 ** self.PRICE_DECIMALS.get(symbol, 8)
+        self.qty_multiplier = 10 ** self.QUANTITY_DECIMALS.get(symbol, 8)
+        
+    def price_to_pips(self, price: str) -> int:
+        """Convert string price to int64 pips."""
+        # Using Decimal for exact conversion
+        from decimal import Decimal, ROUND_HALF_UP
+        
+        decimal_price = Decimal(price)
+        pips = decimal_price * self.price_multiplier
+        return int(pips.quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+        
+    def pips_to_price(self, pips: int) -> Decimal:
+        """Convert pips back to decimal price."""
+        return Decimal(pips) / self.price_multiplier
+```
+
+#### Advantages of Pips
+1. **Performance**: Int64 operations are fastest in Polars
+2. **Memory**: 8 bytes per value, highly compressible
+3. **Determinism**: Integer math is always exact
+4. **Compatibility**: Works with all DataFrame operations
+
+### Decision Tree for Implementation
+
+```
+Start: Can we use Polars native decimal128?
+  │
+  ├─ YES: Performance test passes → Use decimal128 natively
+  │
+  └─ NO: Does int64 pips meet precision needs?
+      │
+      ├─ YES: For 99% of use cases → Implement pips strategy
+      │
+      └─ NO: Exotic requirements → Use PyArrow decimal128
+```
+
+### PyArrow Decimal128 Fallback
+
+If pips prove insufficient (e.g., for cross-asset strategies):
+
+```python
+import pyarrow as pa
+import pyarrow.compute as pc
+
+class ArrowDecimalProcessor:
+    """Use PyArrow for decimal operations, bypassing Polars."""
+    
+    def process_batch(self, batch: pa.RecordBatch) -> pa.RecordBatch:
+        # Convert string prices to decimal128
+        price_type = pa.decimal128(38, 18)
+        prices = pc.cast(batch.column('price'), price_type)
+        
+        # Perform operations in Arrow
+        avg_price = pc.mean(prices)
+        sum_qty = pc.sum(pc.cast(batch.column('quantity'), price_type))
+        
+        # Return processed batch
+        return pa.record_batch([
+            batch.column('timestamp'),
+            prices,
+            batch.column('quantity'),
+        ], names=['timestamp', 'price_decimal', 'quantity'])
+```
+
+### Recommendation
+
+Based on the analysis, **decimal128 is the primary strategy with int64 pips as fallback**:
+
+1. **Decimal128 validated**: Works without errors in Story 1.2.5
+2. **Pips as fallback**: Proven approach used by major exchanges
+3. **Best performance**: Pips provide 5-10x speed if needed
+4. **Future-proof**: Easy to migrate between approaches
 
 ## Input Schema 1: Crypto Lake Book Data
 

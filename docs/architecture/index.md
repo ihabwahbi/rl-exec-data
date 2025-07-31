@@ -1,75 +1,36 @@
 # RLX Co-Pilot Data Pipeline Architecture Document
 
-**Status**: Epic 0 Complete, Epic 1 Ready to Start  
-**Last Updated**: 2025-07-19
+**Status**: Epic 3 In Progress - High-Fidelity Validation  
+**Last Updated**: 2025-07-31
 
-## Current State
+## Overview
 
-✅ **UPDATE**: Epic 0 (Data Acquisition) is now complete. We have successfully implemented and tested the Crypto Lake data acquisition pipeline with real market data. The architecture now reflects this completed state and focuses on Epic 1 implementation.
+This document set contains the complete, living architecture for the RLX Data Pipeline. Start with the status and summary for a high-level overview.
 
-### Key Achievements
-- ✅ Crypto Lake API authentication working with lakeapi package
-- ✅ Downloaded and validated 2.3M+ trade records
-- ✅ 49% test coverage with comprehensive error handling
-- ✅ Production-ready pipeline with CLI interface
-- ✅ Real data characteristics now understood
+### 1. Core Architecture
 
-### Architecture Focus
-The architecture has evolved from its initial "data-first" blocking approach to now guide the implementation of Epic 1 (Analysis & Validation) using the real data we've acquired.
+* [Architecture Status](./architecture-status.md) - **Start here for the current state of the architecture.**
+* [High-Level Architecture](./high-level-architecture.md) - Diagrams and foundational patterns.
+* [Core Workflows](./core-workflows.md) - Sequence diagrams for key system processes.
 
-## Table of Contents
+### 2. Component & Data Design
 
-### ✅ Completed Foundation
-- [Data Acquisition Architecture](./data-acquisition-architecture.md) - **COMPLETE: Pipeline implemented and tested**
-  - Access verified with lakeapi integration
-  - Download pipeline achieving 34.3 MB/s
-  - Production-ready with 49% test coverage
+* [Components](./components.md) - **Master specification for all system components (Reconstructor, FidelityReporter, etc.).**
+* [Data Models](./data-models.md) - Input/output schemas and the critical data precision strategy.
 
-### Core Architecture
-- [Change Log](./changelog.md) - **Architecture version history**
-- [High Level Architecture](./high-level-architecture.md)
-  - [Technical Summary](./high-level-architecture.md#technical-summary)
-  - [High-Level Project Diagram](./high-level-architecture.md#high-level-project-diagram)
-  - [Architectural and Design Patterns](./high-level-architecture.md#architectural-and-design-patterns)
+### 3. Technical Specifications
 
-### Implementation Strategies
-- [Decimal Precision Strategy](./decimal-strategy.md) - **NEW: Int64 pips approach**
-- [Performance Optimization](./performance-optimization.md) - **NEW: Achieving 100k events/sec**
-- [Core Workflows](./core-workflows.md) - **NEW: Detailed sequence diagrams**
+* [Tech Stack](./tech-stack.md) - The definitive list of all technologies and versions.
+* [Security](./security.md) - Security patterns, data protection, and compliance architecture.
+* [Source Tree](./source-tree.md) - The official monorepo folder structure.
+* [Infrastructure and Deployment](./infrastructure-and-deployment.md) - Local deployment and CI/CD setup.
+* [Error Handling](./error-handling.md) - The comprehensive strategy for system resilience.
+* [Test Strategy](./test-strategy.md) - The project's quality assurance framework.
+* [Coding Standards](./coding-standards.md) - Mandatory coding conventions for the team.
+* [Technical Debt](./technical-debt.md) - Living registry of known technical compromises.
 
-### Technical Details
-- [Tech Stack](./tech-stack.md)
-  - [Technology Stack Table](./tech-stack.md#technology-stack-table)
-- [Data Models](./data-models.md)
-  - [Input Schema 1: Raw L2 Book Snapshot](./data-models.md#input-schema-1-raw-l2-book-snapshot)
-  - [Input Schema 2: Raw Trades](./data-models.md#input-schema-2-raw-trades)
-  - [Input Schema 3: Book Delta v2](./data-models.md#input-schema-3-book-delta-v2) - **NEW**
-  - [Output Schema: Unified Market Event](./data-models.md#output-schema-unified-market-event)
+### 4. History & Decisions
 
-### Components
-- [Components Overview](./components.md)
-  - [Component 1: DataAssessor](./components.md#component-1-dataassessor)
-  - [Component 2: LiveCapture](./components.md#component-2-livecapture)
-  - [Component 3: Reconstructor](./components.md#component-3-reconstructor)
-  - [Component 4: FidelityReporter](./components.md#component-4-fidelityreporter)
-  - [Component Diagram](./components.md#component-diagram)
-
-### Development & Operations
-- [Source Tree](./source-tree.md)
-- [Infrastructure and Deployment](./infrastructure-and-deployment.md)
-  - [Infrastructure](./infrastructure-and-deployment.md#infrastructure)
-  - [Deployment and Execution](./infrastructure-and-deployment.md#deployment-and-execution)
-  - [Continuous Integration (CI)](./infrastructure-and-deployment.md#continuous-integration-ci)
-
-### Quality & Reliability
-- [Error Handling](./error-handling.md) - **Comprehensive error handling guide**
-- [Coding Standards](./coding-standards.md)
-- [Test Strategy](./test-strategy.md)
-- [Security](./security.md) - **NEW: Security architecture and compliance**
-
-### Planning & Validation
-- [Architecture Status](./architecture-status.md) - **CURRENT: Single source of truth**
-- [Architecture Summary](./architecture-summary.md) - **Technical vision and decisions**
-- [Epic 1 Action Plan](./epic-1-action-plan.md) - **NEXT: Engineering tasks for Epic 1**
-- [Implementation Roadmap](./implementation-roadmap.md) - **Overall timeline and phases**
-- [Validation Plan](./validation-plan.md) - **Critical: Story 1.2.5 Go/No-Go criteria**
+* [Change Log](./changelog.md) - A reverse chronological log of all architectural changes.
+* [decisions/](./decisions/) - A directory of all formal Architecture Decision Records (ADRs).
+* [archive/](./archive/) - A directory for all historical and process-related documents.

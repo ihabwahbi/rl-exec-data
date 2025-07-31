@@ -1,5 +1,75 @@
 # High Level Architecture
 
+**Last Updated**: 2025-07-31  
+**Status**: Updated with Epic 3 architecture and validated findings
+
+## Executive Summary
+
+The RLX Co-Pilot Data Pipeline architecture has successfully guided the implementation of Epic 0 (Data Acquisition), Epic 1 (Validation), and Epic 2 (Reconstruction). With real Crypto Lake data now accessible and validated, the architecture provides proven patterns while maintaining the critical lessons learned about data-first development.
+
+## Critical Architecture Decisions
+
+### 1. Data-First Blocking Gate ✅ VALIDATED
+**Decision**: No development, validation, or analysis work can begin until actual historical data is acquired from Crypto Lake.
+
+**Rationale**: Synthetic data validation creates false confidence and leads to months of wasted effort when real data behaves differently.
+
+**Implementation**: 
+- Epic 0 successfully blocked other work until completion
+- DataAcquisitionManager implemented with lakeapi integration
+- Data staging area proven effective with 2.3M+ records
+
+### 2. Paradigm Bridge Pattern
+**Decision**: Implement Chronological Event Replay algorithm to bridge the gap between Crypto Lake's snapshot-based historical data and Binance's differential real-time feeds.
+
+**Rationale**: The two data sources have fundamentally different paradigms that must be reconciled for high-fidelity reconstruction.
+
+**Implementation**:
+- 4-step algorithm: Ingestion → Unification → Normalization → Stateful Replay
+- Origin_time as universal clock
+- Stable sort to preserve event ordering
+- Order book state management with drift tracking
+
+### 3. Market Regime Awareness
+**Decision**: Capture and validate across multiple market conditions (high volume, low volume, special events).
+
+**Rationale**: Market behavior varies dramatically across different regimes; validation on only one regime creates blind spots.
+
+**Implementation**:
+- LiveCapture with MarketRegimeDetector
+- Multi-session capture strategy (24-48h per regime)
+- Separate golden samples for each regime
+
+### 4. Comprehensive Fidelity Validation
+**Decision**: Implement full metrics catalogue beyond K-S tests, including advanced statistical tests and microstructure analysis.
+
+**Rationale**: Simple price/volume checks miss critical market dynamics that affect RL agent training.
+
+**Implementation**:
+- Three-tier validation architecture (Streaming, GPU, Comprehensive)
+- Advanced tests: Anderson-Darling, Energy Distance, MMD
+- Interactive HTML dashboards with Plotly
+- p-value > 0.05 threshold for statistical similarity
+
+### 5. Memory-Bounded Processing
+**Decision**: Maintain only top 20 order book levels in memory with streaming fallback.
+
+**Rationale**: Must process 220GB/month of data within 28GB RAM constraint.
+
+**Implementation**:
+- Bounded dictionaries for order book
+- Streaming mode for large datasets
+- Write-ahead log for recovery
+- Backpressure handling
+
+## Key Architectural Principles
+
+1. **Reality First**: All work grounded in actual market data
+2. **Fidelity Maximization**: Every decision optimizes statistical similarity
+3. **Memory Awareness**: Bounded processing within hardware constraints
+4. **Fail Fast**: Early validation gates prevent wasted effort
+5. **Comprehensive Validation**: Multiple metrics across all market regimes
+
 ## Technical Summary
 
 The system will be architected as a modular, command-line-driven ETL (Extract, Transform, Load) pipeline written in Python. **Critical prerequisite**: The pipeline cannot begin any processing until actual historical data is acquired from Crypto Lake through a dedicated data acquisition layer. The architecture implements a "data-first, validation-second" approach, with Epic 0 establishing data access as the blocking gate for all subsequent work. 
