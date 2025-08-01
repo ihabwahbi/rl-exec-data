@@ -85,105 +85,151 @@ sequenceDiagram
 
 ## Workflow 2: Fidelity Validation Process
 
-This workflow illustrates how the FidelityReporter validates reconstructed data against golden samples using the three-tier validation architecture.
+This workflow illustrates how the FidelityReporter validates reconstructed data against golden samples using the advanced three-tier validation architecture aligned with HFT research requirements.
 
 ```mermaid
 sequenceDiagram
-    participant UI as User Interface
+    participant RC as Reconstructor
     participant FR as FidelityReporter
+    participant TC as TierCoordinator
+    participant T1 as Tier1<br/>Streaming<br/>(<1μs)
+    participant T2 as Tier2<br/>GPU-Accelerated<br/>(<1ms)
+    participant T3 as Tier3<br/>Comprehensive<br/>(<100ms)
     participant ME as MetricEngine
-    participant T1 as Tier1<br/>Streaming
-    participant T2 as Tier2<br/>GPU-Accelerated
-    participant T3 as Tier3<br/>Comprehensive
     participant RG as ReportGenerator
-    participant GS as Golden Samples
-    participant RD as Reconstructed Data
+    participant DB as Dashboard
     
-    Note over UI,RG: Epic 3 - Fidelity Validation Pipeline
+    Note over RC,DB: Epic 3 - Advanced Fidelity Validation with HFT Phenomena
     
-    UI->>FR: Start validation
-    FR->>FR: Load configuration
-    FR->>ME: Initialize metric plugins
+    RC->>FR: Initialize validation hooks
+    FR->>TC: Setup three-tier architecture
+    TC->>T1: Initialize streaming metrics
+    TC->>T2: Allocate GPU resources
+    TC->>T3: Setup distributed compute
     
-    ME->>ME: Discover available plugins
-    ME->>ME: Resolve dependencies
-    ME->>T1: Initialize streaming metrics
-    ME->>T2: Initialize GPU metrics
-    ME->>T3: Initialize comprehensive metrics
+    Note over T1: Streaming Tier Metrics:
+    Note over T1: • Hausman noise test
+    Note over T1: • Sequence gap monitoring  
+    Note over T1: • Message rate anomaly
+    Note over T1: • Basic quantile checks
     
-    Note over GS,RD: Data Loading Phase
-    FR->>GS: Load golden sample metadata
-    FR->>RD: Open reconstructed data stream
+    Note over T2: GPU-Accelerated Metrics:
+    Note over T2: • Anderson-Darling (vectorized)
+    Note over T2: • Energy Distance
+    Note over T2: • Linear MMD approximation
+    Note over T2: • Real-time correlations
+    Note over T2: • Deep book analysis (L1-50)
     
-    loop For each data chunk
-        FR->>RD: Read chunk (100k events)
-        FR->>GS: Read corresponding golden chunk
+    Note over T3: Comprehensive Metrics:
+    Note over T3: • 4D Hawkes processes
+    Note over T3: • Copula dependencies
+    Note over T3: • Signature kernel MMD
+    Note over T3: • RL state coverage
+    Note over T3: • Adversarial patterns
+    
+    loop Continuous Processing
+        RC->>T1: Stream market events
         
-        Note over T1: Tier 1: <1μs per event
-        FR->>T1: Stream chunk through Tier 1
-        T1->>T1: Hausman noise test
-        T1->>T1: Sequence gap detection
-        T1->>T1: Basic distribution checks
-        T1-->>ME: Streaming results
-        
-        alt Tier 1 anomaly detected
-            T1->>FR: Raise critical alert
-            FR->>UI: Display real-time warning
+        par Tier 1 Processing
+            T1->>T1: Ring buffer append
+            T1->>T1: <1μs metric checks
+            alt Critical anomaly detected
+                T1->>DB: Immediate alert
+                T1->>TC: Trigger investigation
+            end
+            T1-->>ME: Streaming statistics
+        and Tier 2 Batch Processing
+            RC->>T2: Batch (10K events)
+            T2->>T2: GPU memory transfer
+            T2->>T2: Parallel computation
+            T2->>T2: Statistical tests
+            T2->>T2: Book dynamics
+            T2-->>ME: Batch results
+        and Tier 3 Deep Analysis
+            RC->>T3: Checkpoint data
+            T3->>T3: Distributed processing
+            T3->>T3: Hawkes calibration
+            T3->>T3: Copula fitting
+            T3->>T3: Hidden liquidity
+            T3->>T3: Pattern detection
+            T3-->>ME: Comprehensive results
         end
         
-        Note over T2: Tier 2: <1ms per batch
-        FR->>T2: Send to GPU batch queue
-        T2->>T2: Anderson-Darling tests
-        T2->>T2: Energy Distance calculation
-        T2->>T2: Linear MMD approximation
-        T2->>T2: Correlation updates
-        T2-->>ME: GPU results
-        
-        Note over T3: Tier 3: <100ms per batch
-        FR->>T3: Queue for deep analysis
-        T3->>T3: Signature kernel MMD
-        T3->>T3: Copula fitting
-        T3->>T3: RL state coverage
-        T3->>T3: Adversarial patterns
-        T3-->>ME: Comprehensive results
-        
-        ME->>ME: Aggregate all metrics
-        ME->>ME: Update running statistics
+        ME->>ME: Aggregate metrics
+        ME->>DB: Update live dashboard
     end
     
-    Note over ME,RG: Report Generation Phase
+    Note over ME,RG: Validation Completion
+    
     ME->>ME: Calculate final scores
-    ME->>ME: Determine PASS/FAIL
+    ME->>ME: Check thresholds
     
-    ME->>RG: Send complete results
-    RG->>RG: Generate visualizations
-    RG->>RG: Create Q-Q plots
-    RG->>RG: Build correlation heatmaps
-    RG->>RG: Render 3D state space
+    Note over ME: Critical Thresholds:
+    Note over ME: • Anderson-Darling p > 0.05
+    Note over ME: • Energy distance < 0.01
+    Note over ME: • State coverage > 95%
+    Note over ME: • Sim-to-real gap < 5%
+    Note over ME: • Endogenous ratio ~80%
     
-    RG->>RG: Compile HTML dashboard
-    RG->>RG: Generate PDF summary
-    RG->>RG: Export JSON data
+    ME->>RG: Complete metric results
     
-    RG-->>FR: Reports complete
-    FR-->>UI: Display results
+    par Report Generation
+        RG->>RG: Statistical visualizations
+        RG->>RG: Event clustering heatmaps
+        RG->>RG: Book depth analysis
+        RG->>RG: Adversarial patterns
+        RG->>RG: 3D state space
+        RG->>RG: Regime analysis
+    and Score Calculation
+        RG->>RG: Weight metrics by tier
+        RG->>RG: Apply criticality factors
+        RG->>RG: Compute overall score
+    end
     
-    alt Validation PASSED
-        UI->>UI: Show success (green)
-        UI->>UI: Display fidelity score
-    else Validation FAILED
-        UI->>UI: Show failure (red)
-        UI->>UI: Highlight problem areas
-        UI->>UI: Suggest remediation
+    RG->>RG: Generate outputs
+    Note right of RG: • HTML Dashboard
+    Note right of RG: • PDF Executive Summary
+    Note right of RG: • JSON API Response
+    Note right of RG: • Grafana Metrics
+    
+    RG-->>DB: Final report ready
+    
+    alt Overall PASS
+        DB->>DB: Show success
+        DB->>DB: Display scores by category
+        DB->>DB: Highlight strengths
+    else Overall FAIL
+        DB->>DB: Show failure details
+        DB->>DB: Identify problem metrics
+        DB->>DB: Suggest remediations
+        DB->>DB: Show drift analysis
     end
 ```
 
-### Key Points:
-- **Three-Tier Architecture**: Optimizes for both speed and thoroughness
-- **Parallel Processing**: All tiers can run concurrently on different batches
-- **Real-Time Alerts**: Tier 1 provides immediate feedback on critical issues
-- **GPU Acceleration**: Tier 2 achieves 100x speedup for complex statistics
-- **Comprehensive Analysis**: Tier 3 performs deep validation including RL metrics
+### Key Architectural Points:
+
+#### Data Flow Optimization
+- **Zero-Copy Integration**: Tier 1 hooks directly into Reconstructor's event stream
+- **Parallel Execution**: All three tiers process concurrently on different data windows
+- **Backpressure Handling**: Each tier signals capacity to prevent overload
+- **Memory Bounded**: Fixed buffers with spillover to disk under pressure
+
+#### Latency Guarantees
+- **Tier 1 (<1μs)**: C++/Rust extensions, lock-free structures, SIMD operations
+- **Tier 2 (<1ms)**: CUDA kernels, persistent GPU contexts, kernel fusion
+- **Tier 3 (<100ms)**: Distributed compute, work stealing, incremental updates
+
+#### HFT Phenomena Validation
+- **Event Clustering**: Multi-scale detection at 10μs, 1-5ms, 100μs windows
+- **Deep Book Dynamics**: Full 50-level analysis with hidden liquidity detection
+- **Adversarial Patterns**: Real-time flagging of spoofing, layering, momentum ignition
+- **Microstructure Preservation**: Hawkes processes, copulas, regime transitions
+
+#### Performance Characteristics
+- **Throughput**: Maintains 336K+ messages/second with <5% overhead
+- **Scalability**: Linear scaling to 100+ GPU nodes for Tier 2/3
+- **Resilience**: Graceful degradation under resource constraints
+- **Observability**: Full metrics export via OpenTelemetry
 
 ## Workflow 3: Multi-Symbol Processing
 

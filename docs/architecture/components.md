@@ -347,32 +347,44 @@ Process-per-symbol architecture avoiding Python GIL:
 
 ## Component 4: `FidelityReporter` 🔴 **IN PROGRESS - EPIC 3**
 
-  * **Responsibility:** To automate comprehensive quality assurance implementing the full **Fidelity Validation Metrics Catalogue** from the research (as defined in Epic 3). It performs deep statistical and microstructure validation between reconstructed historical data and golden samples to ensure the backtesting environment is a faithful replica of reality.
+  * **Responsibility:** To automate comprehensive quality assurance implementing the full **Fidelity Validation Metrics Catalogue** from the research (as defined in Epic 3). It performs deep statistical and microstructure validation between reconstructed historical data and golden samples to ensure the backtesting environment is a faithful replica of reality, with specific focus on preserving critical HFT phenomena including event clustering, deep book dynamics, and adversarial patterns.
   * **Status:** CRITICAL - 0% Implementation Exists. Only ValidationFramework foundation available.
-  * **Architecture:** Plugin-based metric system with three-tier execution model for performance optimization.
+  * **Architecture:** Plugin-based metric system with **three-tier execution model** for performance optimization:
+      - **Tier 1 (<1μs)**: Streaming tests for real-time monitoring
+      - **Tier 2 (<1ms)**: GPU-accelerated tests for frequent validation  
+      - **Tier 3 (<100ms)**: Comprehensive tests for deep analysis
   * **Key Interfaces:**
       * **Input:** 
         - Path to the reconstructed data (Unified Event Stream)
-        - Path to the golden sample data (minimum 24 hours, multiple market regimes)
-        - Validation configuration (thresholds, metrics to compute)
+        - Path to the golden sample data (minimum 24-48 hours, multiple market regimes)
+        - Validation configuration (thresholds, metrics to compute, tier execution settings)
       * **Output:** A comprehensive Fidelity Report in Markdown/HTML format with:
-        - **Executive Summary**: Fidelity Score (weighted average of p-values), PASS/FAIL determination
-        - **Order Flow Dynamics Metrics**:
-          - Trade Size Distribution: Histogram, moments (mean, variance, skew, kurtosis), K-S test
-          - Inter-Event Time Distribution: Event clustering analysis, K-S test, Hawkes process fit
-        - **Market State Properties Metrics**:
-          - Bid-Ask Spread Distribution: Time series, histogram, K-S test
-          - Top-of-Book Depth Distribution: Liquidity analysis, K-S test
-          - Order Book Imbalance: OI = (V_bid - V_ask)/(V_bid + V_ask), predictive power analysis
-        - **Price Return Characteristics**:
-          - Volatility Clustering: Autocorrelation of squared log-returns corr(r²_t, r²_{t+τ})
-          - Heavy Tails of Returns: Kurtosis validation (should be > 3 for leptokurtic distribution)
-        - **Microstructure Parity Metrics**:
-          - Sequence gap count and distribution analysis
-          - Best bid/ask RMS error vs golden sample (per 10ms window)
-          - Per-level depth correlation (Pearson ρ for levels 1-20)
-          - Book drift quantification from snapshot resynchronization
-        - **Visual Reports**: Side-by-side distribution plots, Q-Q plots, correlation heatmaps
+        - **Executive Summary**: Fidelity Score (weighted average across all tests), PASS/FAIL determination
+        - **Statistical Distribution Tests** (Replacing K-S):
+          - Anderson-Darling Test: Enhanced tail sensitivity (p-value > 0.05)
+          - Cramér-von Mises Test: Balanced distribution sensitivity
+          - Energy Distance: Multivariate distribution comparison (<0.01 normalized)
+          - Maximum Mean Discrepancy (MMD): Temporal dependency detection with signature kernels
+        - **Event Clustering & Hawkes Process Analysis**:
+          - Multi-scale clustering detection (~10μs, 1-5ms, 100μs scales)
+          - 4D Hawkes process calibration (price jumps + order flow)
+          - Endogenous activity ratio (target: ~80% for crypto)
+          - Critical regime detection (branching ratio approaching 1)
+        - **Deep Book Dynamics (Beyond Level 20)**:
+          - Multi-level predictive power analysis (L1-5: volatile, L3-10: strongest, L10-20: long-term)
+          - Hidden liquidity detection (85-90% matching rate validation)
+          - Book resilience metrics (recovery time after shocks)
+          - Asymmetric deterioration patterns (ask-side in volatile markets)
+        - **Adversarial Pattern Detection**:
+          - Quote Stuffing: 2000+ orders/sec with 32:1 cancellation ratios
+          - Spoofing/Layering: <500ms patterns with 10-50:1 volume ratios
+          - Momentum Ignition: <5 second complete cycles
+          - Fleeting Liquidity: Sub-100ms order lifetimes
+        - **RL-Specific Validation**:
+          - State-action coverage (>95% requirement)
+          - Reward signal fidelity (<5% distribution difference)
+          - Sim-to-real gap measurement (<5% policy degradation)
+        - **Visual Reports**: 3D state space projections, regime analysis, pattern heatmaps
   * **Fidelity Metrics Implementation:**
       ```python
       class FidelityMetricsCalculator:
@@ -462,13 +474,14 @@ Process-per-symbol architecture avoiding Python GIL:
 
 ### Plugin-Based Architecture
 
-The FidelityReporter implements a sophisticated plugin system for extensible metric calculation:
+The FidelityReporter implements a sophisticated plugin system for extensible metric calculation, designed to support complex models required by the HFT research:
 
 ```python
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Tuple
 import polars as pl
+import numpy as np
 
 @dataclass
 class MetricResult:
@@ -476,6 +489,8 @@ class MetricResult:
     value: Union[float, dict]
     metadata: dict
     visualization: Optional[dict] = None
+    execution_tier: int  # 1, 2, or 3
+    computation_time_ms: float
 
 class MetricPlugin(ABC):
     """Base class for all fidelity metrics."""
@@ -493,39 +508,373 @@ class MetricPlugin(ABC):
         pass
     
     @property
+    @abstractmethod
+    def execution_tier(self) -> int:
+        """Execution tier (1: <1μs, 2: <1ms, 3: <100ms)."""
+        pass
+    
+    @property
     def dependencies(self) -> List[str]:
         """List of other metrics this depends on."""
         return []
     
     @property
-    def streaming_capable(self) -> bool:
-        """Whether this metric can be calculated in streaming mode."""
+    def gpu_accelerated(self) -> bool:
+        """Whether this metric benefits from GPU acceleration."""
         return False
     
     @abstractmethod
-    def calculate(self, data: Union[pl.DataFrame, "Stream"]) -> MetricResult:
+    def calculate(self, data: Union[pl.DataFrame, "Stream"], 
+                 cache: Optional[Dict] = None) -> MetricResult:
         """Calculate the metric from input data."""
         pass
 ```
 
+#### Complex Model Plugins
+
+##### Hawkes Process Plugin
+```python
+class HawkesProcessPlugin(MetricPlugin):
+    """4D Hawkes process calibration for event clustering analysis."""
+    
+    def __init__(self):
+        self.dimensions = ['price_jumps', 'buy_orders', 'sell_orders', 'cancellations']
+        self.kernel_type = 'power_law'  # Superior to exponential for crypto
+    
+    @property
+    def name(self) -> str:
+        return "hawkes_process_4d"
+    
+    @property
+    def category(self) -> str:
+        return "event_clustering"
+    
+    @property
+    def execution_tier(self) -> int:
+        return 3  # Comprehensive analysis tier
+    
+    @property
+    def gpu_accelerated(self) -> bool:
+        return True  # CUDA kernel for likelihood optimization
+    
+    def calculate(self, data: pl.DataFrame, cache: Optional[Dict] = None) -> MetricResult:
+        # Extract multi-dimensional event times
+        events = self._extract_event_sequences(data)
+        
+        # Calibrate 4D Hawkes model with power-law kernels
+        params = self._calibrate_hawkes_gpu(events)
+        
+        # Calculate key metrics
+        branching_ratio = self._compute_branching_ratio(params)
+        endogenous_ratio = self._compute_endogenous_ratio(params)
+        clustering_scales = self._detect_clustering_scales(events)
+        
+        return MetricResult(
+            name=self.name,
+            value={
+                'baseline_intensities': params['mu'],
+                'excitation_matrix': params['alpha'],
+                'decay_parameters': params['beta'],
+                'branching_ratio': branching_ratio,
+                'endogenous_ratio': endogenous_ratio,
+                'clustering_scales_us': clustering_scales,
+                'critical_regime': branching_ratio > 0.95
+            },
+            metadata={
+                'kernel_type': self.kernel_type,
+                'dimensions': self.dimensions,
+                'convergence_achieved': params['converged']
+            },
+            execution_tier=3,
+            computation_time_ms=params['computation_time']
+        )
+```
+
+##### Copula Dependency Plugin
+```python
+class CopulaAnalysisPlugin(MetricPlugin):
+    """Multi-dimensional dependency analysis using copulas."""
+    
+    def __init__(self, copula_families=['gaussian', 'student', 'clayton', 'gumbel']):
+        self.copula_families = copula_families
+        self.dimensions = ['price', 'volume', 'spread', 'book_imbalance']
+    
+    @property
+    def name(self) -> str:
+        return "copula_dependencies"
+    
+    @property
+    def category(self) -> str:
+        return "cross_sectional_dependencies"
+    
+    @property
+    def execution_tier(self) -> int:
+        return 3  # Comprehensive analysis
+    
+    def calculate(self, data: pl.DataFrame, cache: Optional[Dict] = None) -> MetricResult:
+        # Extract marginals for each dimension
+        marginals = self._compute_empirical_marginals(data)
+        
+        # Fit various copula families
+        copula_fits = {}
+        for family in self.copula_families:
+            fit_result = self._fit_copula(marginals, family)
+            copula_fits[family] = fit_result
+        
+        # Select best fitting copula by AIC
+        best_copula = min(copula_fits.items(), key=lambda x: x[1]['aic'])
+        
+        # Compute tail dependence coefficients
+        tail_deps = self._compute_tail_dependence(best_copula[1])
+        
+        return MetricResult(
+            name=self.name,
+            value={
+                'best_copula': best_copula[0],
+                'parameters': best_copula[1]['params'],
+                'goodness_of_fit': best_copula[1]['gof_pvalue'],
+                'upper_tail_dependence': tail_deps['upper'],
+                'lower_tail_dependence': tail_deps['lower'],
+                'kendall_tau_matrix': self._compute_kendall_tau(data)
+            },
+            metadata={
+                'dimensions': self.dimensions,
+                'all_fits': {k: v['aic'] for k, v in copula_fits.items()}
+            },
+            execution_tier=3,
+            computation_time_ms=sum(f['fit_time'] for f in copula_fits.values())
+        )
+```
+
+##### Deep Book Analysis Plugin
+```python
+class DeepBookDynamicsPlugin(MetricPlugin):
+    """Analysis of order book dynamics beyond Level 20."""
+    
+    def __init__(self, max_levels=50, hidden_liquidity_detection=True):
+        self.max_levels = max_levels
+        self.hidden_liquidity_detection = hidden_liquidity_detection
+        self.level_groups = {
+            'volatile': range(1, 6),
+            'predictive': range(3, 11),
+            'stable': range(10, 21),
+            'deep': range(20, max_levels + 1)
+        }
+    
+    @property
+    def name(self) -> str:
+        return "deep_book_dynamics"
+    
+    @property
+    def category(self) -> str:
+        return "market_microstructure"
+    
+    @property
+    def execution_tier(self) -> int:
+        return 2  # GPU-accelerated for matrix operations
+    
+    @property
+    def gpu_accelerated(self) -> bool:
+        return True
+    
+    def calculate(self, data: pl.DataFrame, cache: Optional[Dict] = None) -> MetricResult:
+        # Extract book states up to max_levels
+        book_states = self._extract_deep_book_states(data)
+        
+        # Analyze predictive power by level groups
+        predictive_power = {}
+        for group_name, levels in self.level_groups.items():
+            r_squared = self._compute_predictive_power_gpu(
+                book_states, levels, horizons=[60, 300, 600]  # 1min, 5min, 10min
+            )
+            predictive_power[group_name] = r_squared
+        
+        # Detect hidden liquidity patterns
+        hidden_liquidity = None
+        if self.hidden_liquidity_detection:
+            hidden_liquidity = self._detect_hidden_liquidity(data)
+        
+        # Compute resilience metrics
+        resilience = self._compute_resilience_metrics(book_states)
+        
+        # Analyze asymmetric deterioration
+        asymmetry = self._analyze_bid_ask_asymmetry(book_states)
+        
+        return MetricResult(
+            name=self.name,
+            value={
+                'predictive_power_by_level': predictive_power,
+                'hidden_liquidity_ratio': hidden_liquidity['detection_rate'] if hidden_liquidity else None,
+                'iceberg_signatures': hidden_liquidity['iceberg_count'] if hidden_liquidity else None,
+                'book_resilience_ms': resilience['mean_recovery_time'],
+                'shock_absorption_capacity': resilience['absorption_ratio'],
+                'bid_ask_asymmetry': asymmetry,
+                'optimal_book_depth': self._find_optimal_depth(predictive_power)
+            },
+            metadata={
+                'max_levels_analyzed': self.max_levels,
+                'total_book_states': len(book_states)
+            },
+            execution_tier=2,
+            computation_time_ms=cache.get('gpu_time', 0) if cache else 0
+        )
+```
+
 ### Three-Tier Execution Model
 
-Aligned with PRD validation strategy for optimal performance:
+Aligned with PRD validation strategy for optimal performance across different latency requirements:
 
 #### Tier 1: Streaming Layer (<1μs latency)
-- **Implementation**: Hook into EventReplayer for real-time collection
-- **Tests**: Hausman microstructure noise detection, sequence gap monitoring
-- **Throughput**: Maintains 336K+ messages/second pipeline performance
+```python
+class StreamingTier:
+    """Ultra-low latency validation integrated with reconstruction pipeline."""
+    
+    def __init__(self):
+        self.metrics = [
+            HausmanNoiseTest(),        # Microstructure noise detection
+            SequenceGapMonitor(),      # Real-time gap detection
+            BasicQuantileCheck(),      # Distribution bounds monitoring
+            MessageRateAnomaly()       # Burst/drought detection
+        ]
+        self.ring_buffer = RingBuffer(size=10000)  # Microsecond-precision events
+    
+    def process_event(self, event: MarketEvent) -> Optional[Alert]:
+        """Process single event with <1μs overhead."""
+        # Add to ring buffer for pattern detection
+        self.ring_buffer.append(event)
+        
+        # Run ultra-fast metrics
+        for metric in self.metrics:
+            if metric.requires_alert(event, self.ring_buffer):
+                return Alert(
+                    severity='CRITICAL',
+                    metric=metric.name,
+                    timestamp=event.timestamp,
+                    details=metric.get_alert_details()
+                )
+        return None
+```
+
+- **Implementation**: C++/Rust extensions for critical path, lock-free data structures
+- **Integration**: Zero-copy hooks into EventReplayer main loop
+- **Features**:
+  - Ring buffer for sub-100ms pattern detection
+  - SIMD operations for parallel metric computation
+  - Memory-mapped alerts for IPC with monitoring
 
 #### Tier 2: GPU-Accelerated Layer (<1ms latency)
-- **Implementation**: CUDA/RAPIDS with micro-batching
-- **Tests**: Anderson-Darling (vectorized), Energy Distance, Linear MMD approximations
-- **Acceleration**: 100x speedup over CPU for complex statistical tests
+```python
+class GPUAcceleratedTier:
+    """Batch processing with massive parallelization."""
+    
+    def __init__(self, gpu_device=0):
+        self.device = cuda.Device(gpu_device)
+        self.metrics = [
+            AndersonDarlingGPU(),      # Vectorized A-D test
+            EnergyDistanceGPU(),       # Parallel distance computation
+            LinearMMDApproximation(),  # Fast kernel approximation
+            CorrelationMatrixGPU()     # Real-time correlation updates
+        ]
+        self.batch_size = 10000
+        self.stream = cuda.Stream()
+    
+    async def process_batch(self, events: pa.RecordBatch) -> MetricResults:
+        """Process event batch on GPU with <1ms latency."""
+        # Transfer to GPU memory
+        gpu_events = self._transfer_to_gpu(events)
+        
+        # Parallel metric computation
+        results = await asyncio.gather(*[
+            metric.calculate_async(gpu_events, self.stream)
+            for metric in self.metrics
+        ])
+        
+        return MetricResults(
+            metrics=results,
+            batch_size=len(events),
+            computation_time_us=self.stream.elapsed_time()
+        )
+```
+
+- **Technology**: CUDA 12+, RAPIDS cuDF, Numba CUDA
+- **Optimizations**:
+  - Kernel fusion for related computations
+  - Persistent kernels for streaming workloads
+  - Mixed precision for non-critical calculations
+- **Capacity**: 100K+ events per millisecond
 
 #### Tier 3: Comprehensive Analysis (<100ms latency)
-- **Implementation**: Distributed processing for heavy computations
-- **Tests**: Signature kernel MMD, Copula fitting, RL policy evaluation
-- **Scaling**: Linear with cluster size for large-scale validation
+```python
+class ComprehensiveTier:
+    """Deep analysis with distributed computing support."""
+    
+    def __init__(self, executor='dask'):
+        self.executor = self._init_executor(executor)
+        self.metrics = [
+            SignatureKernelMMD(),      # Full temporal dependency analysis
+            MultivariateCopula(),      # Complex dependency structures
+            HawkesProcess4D(),         # Multi-dimensional clustering
+            RLPolicyEvaluation(),      # Sim-to-real gap measurement
+            AdversarialPatterns()      # Deep pattern detection
+        ]
+    
+    def analyze_dataset(self, 
+                       reconstructed: pl.LazyFrame,
+                       golden: pl.LazyFrame) -> ComprehensiveReport:
+        """Run full validation suite with distributed computation."""
+        # Partition data for distributed processing
+        partitions = self._partition_by_time(reconstructed, golden)
+        
+        # Map metrics across partitions
+        futures = []
+        for partition in partitions:
+            for metric in self.metrics:
+                future = self.executor.submit(
+                    metric.calculate,
+                    partition.reconstructed,
+                    partition.golden
+                )
+                futures.append((metric.name, future))
+        
+        # Reduce results
+        results = {}
+        for metric_name, future in futures:
+            result = future.result(timeout=100)  # 100ms timeout
+            results[metric_name] = result
+        
+        # Generate comprehensive report
+        return self._compile_report(results)
+```
+
+- **Frameworks**: Dask/Ray for distribution, Apache Arrow for data handling
+- **Features**:
+  - Automatic work stealing for load balancing
+  - Incremental computation with caching
+  - Fault tolerance with result checkpointing
+- **Scaling**: Linear to 100+ nodes
+
+### Implementation Architecture
+
+```yaml
+TierCoordinator:
+  purpose: "Orchestrate all three tiers for optimal resource usage"
+  
+  data_flow:
+    - EventStream → Tier1 (continuous)
+    - EventBatches → Tier2 (every 1000 events)  
+    - Checkpoints → Tier3 (every 5 minutes)
+  
+  alert_aggregation:
+    - Tier1: Immediate alerts → Dashboard
+    - Tier2: Batch summaries → MetricStore
+    - Tier3: Comprehensive reports → ReportGenerator
+  
+  resource_management:
+    - CPU: Reserved cores for Tier1
+    - GPU: Time-sliced between Tier2 batches
+    - Memory: Bounded buffers with backpressure
+    - Network: Priority queues for alerts
+```
 
 ### Advanced Statistical Tests (Replacing K-S)
 

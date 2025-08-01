@@ -17,11 +17,62 @@ Beyond standard unit and integration tests, this complex system requires special
 
 ### Fidelity Validation Testing
 
-The system's output must be validated against rigorous statistical and microstructure metrics to ensure the reconstructed data faithfully represents actual market behavior.
+The system's output must be validated against rigorous statistical and microstructure metrics to ensure the reconstructed data faithfully represents actual market behavior, with explicit focus on preserving critical HFT phenomena that directly impact RL agent training effectiveness.
 
-- **Strategy**: Plugin-based metric system with three-tier execution model (Streaming, GPU, Comprehensive)
-- **Metrics**: Advanced statistical tests including Anderson-Darling, Energy Distance, and Maximum Mean Discrepancy
-- **Reference**: See [FidelityReporter component](./components.md#component-4-fidelityreporter--in-progress---epic-3) for the comprehensive metric catalogue
+#### Core HFT Phenomena Validation
+
+**Event Clustering & Hawkes Processes**
+- **Test Goal**: Validate preservation of self-exciting event cascades at multiple time scales
+- **Key Metrics**: 
+  - Multi-scale clustering at ~10μs, 1-5ms, and 100μs windows
+  - 4D Hawkes process calibration accuracy (baseline intensity μ, excitation kernels φ)
+  - Endogenous activity ratio validation (target: ~80% for crypto markets)
+  - Critical regime detection (branching ratio approaching 1)
+- **Test Data**: Minimum 24-48 hour golden samples across different market regimes
+
+**Fleeting Quotes & Adversarial Patterns**
+- **Test Goal**: Ensure sub-100ms quote dynamics and manipulation signatures are preserved
+- **Key Patterns to Validate**:
+  - Quote Stuffing: 2000+ orders/sec with 32:1 cancellation ratios
+  - Spoofing/Layering: <500ms patterns with 10-50:1 volume ratios
+  - Momentum Ignition: <5 second complete cycles
+  - Fleeting Liquidity: Sub-100ms order lifetime distributions
+- **Detection Accuracy**: Ring buffer implementation must flag patterns within 50ms
+
+**Deep Book Dynamics Beyond Level 20**
+- **Test Goal**: Validate order book microstructure preservation across all depth levels
+- **Validation Requirements**:
+  - Predictive power analysis by level groups (L1-5: volatile, L3-10: predictive, L10-20: stable)
+  - Hidden liquidity detection accuracy (85-90% matching rate target)
+  - Book resilience metrics (recovery time < 20 best limit updates)
+  - Asymmetric deterioration patterns in volatile markets
+- **Test Coverage**: Full 50-level book analysis with iceberg order detection
+
+#### Three-Tier Testing Architecture
+
+- **Tier 1 (<1μs)**: Real-time streaming tests integrated with reconstruction pipeline
+  - Hausman microstructure noise detection
+  - Sequence gap monitoring with immediate alerts
+  - Message rate anomaly detection for burst patterns
+  
+- **Tier 2 (<1ms)**: GPU-accelerated batch validation
+  - Anderson-Darling tests replacing inadequate K-S tests
+  - Energy Distance for multivariate validation
+  - Linear MMD approximations for temporal patterns
+  
+- **Tier 3 (<100ms)**: Comprehensive deep analysis
+  - Signature kernel MMD for full temporal dependencies
+  - Copula-based cross-sectional dependency validation
+  - RL-specific metrics (state coverage >95%, sim-to-real gap <5%)
+
+#### Success Criteria
+
+- **Statistical Validity**: Anderson-Darling p-value > 0.05 for all key distributions
+- **Microstructure Fidelity**: Order book correlation > 0.99 at top levels, OFI R² > 0.1
+- **HFT Pattern Preservation**: Adversarial pattern frequency within ±20% of golden samples
+- **RL Performance**: <5% policy degradation when trained on reconstructed vs live data
+
+- **Reference**: See [FidelityReporter component](./components.md#component-4-fidelityreporter--in-progress---epic-3) for detailed implementation
 
 ### Performance Testing
 
