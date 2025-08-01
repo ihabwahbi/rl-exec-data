@@ -62,6 +62,10 @@
     * Order book correlation > 0.99 at top levels
     * State coverage > 95% for RL applications
     * Sim-to-real performance gap < 5%
+    * Preservation of event clustering and self-exciting dynamics as modeled by Hawkes processes
+    * Accurate representation of deep order book liquidity, including resilience to liquidity shocks
+    * Statistical presence of adversarial trading patterns (e.g., spoofing, momentum ignition)
+    * Realistic modeling of execution quality metrics, including queue position effects and adverse selection
     * All validation must be performed on real Crypto Lake data, not synthetic data
 * **NFR2: Determinism:** The pipeline must be fully deterministic. Given the same input data, it must produce the exact same output event stream every time.
 * **NFR3: Performance:** The pipeline must be capable of processing one month of historical BTC-USDT data on the target hardware (Beelink SER9 with 32GB RAM) within a 24-hour period. Memory usage must not exceed 28GB to allow for OS overhead. If delta feeds require more memory, implement streaming chunked processing.

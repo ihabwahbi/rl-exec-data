@@ -135,6 +135,7 @@ The work is structured into four logical epics, progressing from data acquisitio
     * > [ASSUMPTION][R-GEM-03] Implement autocorrelation tests for volatility persistence patterns
     * **Order Flow Clustering**: Validate bursty behavior and Hawkes process characteristics
     * > [ASSUMPTION][R-CLD-08] Validate order arrival clustering via inter-arrival time distributions
+    * **Multi-Scale Intensity Peaks**: Ensure the reconstruction preserves multi-scale intensity peaks (~10µs, 1-5ms) characteristic of Hawkes processes in crypto markets
     * **Intraday Seasonality**: U-shaped volume patterns, spread variations
     * > [ASSUMPTION][R-OAI-07] Implement intraday pattern validation across time zones
     * **Microstructure Noise**: Implement Hausman test for noise detection
@@ -147,6 +148,7 @@ The work is structured into four logical epics, progressing from data acquisitio
     * > [ASSUMPTION][R-OAI-08] Implement empirical copula goodness-of-fit tests
     * **Cross-Sectional Dependencies**: Validate correlations across order book levels
     * > [ASSUMPTION][R-GEM-04] Use Pesaran CD test for cross-sectional dependence
+    * **Deep Book Imbalance Analysis**: Validate that deep-book imbalances retain their predictive power for short-term price movements
     * **Order Book Imbalance Predictive Power**: Validate OFI regression coefficients
     * > [ASSUMPTION][R-CLD-10] OFI should predict short-term price movements with R² > 0.1
     * **Hidden Liquidity Detection**: Validate iceberg order effects through slippage analysis
@@ -169,6 +171,7 @@ The work is structured into four logical epics, progressing from data acquisitio
     * > [ASSUMPTION][R-GEM-07] Spoofing frequency must match golden sample ±20%
     * **Fleeting Liquidity**: Validate sub-100ms order lifetime distributions
     * > [ASSUMPTION][R-CLD-12] Fleeting order percentage must match reality
+    * **Fleeting Quotes Validation**: Confirm the presence of fleeting quotes with sub-100ms lifetimes and realistic order-to-trade ratios during simulated quote stuffing events
     * **Quote Stuffing**: Detect message rate bursts and volatility spikes
     * > [ASSUMPTION][R-OAI-10] Message burst patterns must be preserved
     * **Market Manipulation Patterns**: Validate layering and momentum ignition
