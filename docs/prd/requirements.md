@@ -24,7 +24,11 @@
     * *If `origin_time` is reliable for all events and deltas unavailable:* The primary sort key will be `origin_time`.
     * *If `origin_time` is unreliable for book snapshots:* The pipeline will use the "snapshot-anchored" method, using snapshot timestamps as the primary clock and injecting trades into their respective 100ms windows.
 * **FR5: Schema Conformation:** The pipeline's final output must conform to the agreed-upon **Unified Market Event Schema**, which includes event type, timestamp, and event-specific data fields (trade price/qty or book state).
-* **FR6: Automated Fidelity Reporting [IN PROGRESS - CURRENT PRIORITY]:** The pipeline must generate a comprehensive "Fidelity Report" using advanced statistical validation methods that go beyond traditional K-S tests. **STATUS**: Validation framework exists, implementation in progress as primary focus. **IMPLEMENTATION**: This requirement is implemented via the FidelityReporter component, detailed in Epic 3 stories 3.0 through 3.8. The validation must use a multi-faceted approach including:
+* **FR6: Automated Fidelity Reporting [IN PROGRESS - CURRENT PRIORITY]:** The pipeline must generate a comprehensive "Fidelity Report" using advanced statistical validation methods that go beyond traditional K-S tests. **STATUS**: Validation framework exists, implementation in progress as primary focus. 
+    
+    **IMPLEMENTATION**: This requirement is fully implemented through the FidelityReporter component, which is responsible for testing all the advanced HFT phenomena detailed in NFR1 and validation-strategy.md. The complete implementation is executed via Epic 3 stories (3.0 through 3.8), which define the specific validation metrics and their implementation approach.
+    
+    The FidelityReporter validation must use a multi-faceted approach including:
     * **Advanced Statistical Tests** (replacing K-S as primary method):
         * Anderson-Darling tests for tail-sensitive distribution validation (primary test)
         * Cramér-von Mises tests for balanced overall distribution validation
@@ -55,18 +59,23 @@
 
 ## Non-Functional Requirements (NFR)
 
-* **NFR1: Data Fidelity:** The primary goal. The reconstructed **actual** historical data stream must be statistically indistinguishable from live market data using a comprehensive suite of advanced validation methods. Traditional K-S tests are inadequate due to their assumptions of i.i.d. data, insensitivity to tail events, and inability to handle multivariate distributions. **CRITICAL**: The validation must employ:
+* **NFR1: Data Fidelity [CRITICAL - ENHANCED SCOPE]:** The primary goal. The reconstructed **actual** historical data stream must be statistically indistinguishable from live market data using a comprehensive suite of advanced validation methods. Traditional K-S tests are inadequate due to their assumptions of i.i.d. data, insensitivity to tail events, and inability to handle multivariate distributions. 
+    
+    **CRITICAL SUCCESS CRITERIA**: The validation must employ:
     * Anderson-Darling tests (p-value > 0.05) for tail-sensitive validation of returns
     * Energy Distance (< 0.01 normalized) for multivariate state vector validation
     * MMD with signature kernels for temporal dependency validation
     * Order book correlation > 0.99 at top levels
     * State coverage > 95% for RL applications
     * Sim-to-real performance gap < 5%
-    * Preservation of event clustering and self-exciting dynamics as modeled by Hawkes processes
-    * Accurate representation of deep order book liquidity, including resilience to liquidity shocks
-    * Statistical presence of adversarial trading patterns (e.g., spoofing, momentum ignition)
-    * Realistic modeling of execution quality metrics, including queue position effects and adverse selection
-    * All validation must be performed on real Crypto Lake data, not synthetic data
+    
+    **HIGH-FREQUENCY TRADING PHENOMENA PRESERVATION** (as detailed in validation-strategy.md):
+    * **Event Clustering & Hawkes Processes**: Preservation of multi-scale intensity peaks (~10μs, 1-5ms), self-exciting dynamics with power-law kernels, super-Poisson clustering (Fano factor > 1), and endogenous activity patterns (80% of trades)
+    * **Deep Order Book Dynamics**: Accurate representation of liquidity beyond L20, including predictive power by level (L3-10 strongest for 1-5min horizons), iceberg order signatures (85-90% matching rates), resilience metrics (<20 best limit updates for recovery), and asymmetric deterioration patterns
+    * **Adversarial Pattern Signatures**: Statistical presence of quote stuffing (2000+ orders/sec, 32:1 cancellation), spoofing/layering (10-50:1 volume ratios, <500ms cancellations), momentum ignition (complete cycle <5 seconds), and fleeting quotes (sub-100ms lifetimes)
+    * **Execution Quality Benchmarks**: Realistic modeling of queue position dynamics (37-49% lower implementation shortfall for first-in-queue), market impact models (square-root law, Kyle's lambda), adverse selection metrics (60%+ passive fills followed by unfavorable moves), and MEV effects
+    
+    All validation must be performed on real Crypto Lake data, not synthetic data
 * **NFR2: Determinism:** The pipeline must be fully deterministic. Given the same input data, it must produce the exact same output event stream every time.
 * **NFR3: Performance:** The pipeline must be capable of processing one month of historical BTC-USDT data on the target hardware (Beelink SER9 with 32GB RAM) within a 24-hour period. Memory usage must not exceed 28GB to allow for OS overhead. If delta feeds require more memory, implement streaming chunked processing.
 * **NFR4: Configurability:** The pipeline must be configurable to run for different symbols and date ranges without code changes.

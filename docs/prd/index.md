@@ -23,6 +23,7 @@
 - [Research](./research/initial-research.md) - **Consolidated research findings**
 - [Research Impact Matrix](./research-impact-matrix.md) - **Deep research insights mapping**
 - [Validation Strategy](./validation-strategy.md) - **Comprehensive validation approach**
+- [Fidelity Refinement Playbook](./fidelity-refinement-playbook.md) - **Epic 3 operational workflow**
 - [Next Steps](./next-steps.md)
 - [Changelog](./changelog.md) - **Version history**
 

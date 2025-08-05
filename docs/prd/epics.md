@@ -90,7 +90,7 @@ The work is structured into four logical epics, progressing from data acquisitio
 
 ## **Epic 3: Automated Fidelity Validation & Reporting** 🔴 **CURRENT PRIORITY - IN PROGRESS**
 
-*Goal: To build the automated quality assurance framework that proves the backtesting data is a faithful replica of the live market. This is the critical deliverable for achieving our primary goal of high-fidelity validation.*
+*Goal: To build the automated quality assurance framework that proves the backtesting data is a faithful replica of the live market. This epic will be considered complete when the Reconstructor's output achieves a **sustained 100% pass rate** against all implemented fidelity metrics over multiple consecutive pipeline runs, demonstrating robust and reliable data fidelity. This is the critical deliverable for achieving our primary goal of high-fidelity validation.*
 
 **PREREQUISITE**: ✅ Epic 2 pipeline complete. The ValidationFramework from Story 1.3 provides a strong foundation with K-S tests, power law validation, and streaming support that can be extended for comprehensive fidelity reporting.
 
@@ -131,16 +131,17 @@ The work is structured into four logical epics, progressing from data acquisitio
     * Estimated effort: 5 days
 
 * **Story 3.1c: Temporal Dynamics & Stylized Facts [NEW]:** Validate critical temporal patterns:
-    * **Volatility Clustering**: Validate autocorrelation of squared returns
+    * **Volatility Clustering**: Validate autocorrelation of squared returns with GARCH(1,1) parameters within 10%
     * > [ASSUMPTION][R-GEM-03] Implement autocorrelation tests for volatility persistence patterns
-    * **Order Flow Clustering**: Validate bursty behavior and Hawkes process characteristics
+    * **Order Flow Clustering**: Validate bursty behavior and Hawkes process characteristics with branching ratio ~1
     * > [ASSUMPTION][R-CLD-08] Validate order arrival clustering via inter-arrival time distributions
-    * **Multi-Scale Intensity Peaks**: Ensure the reconstruction preserves multi-scale intensity peaks (~10µs, 1-5ms) characteristic of Hawkes processes in crypto markets
+    * **Multi-Scale Intensity Peaks**: Ensure the reconstruction preserves multi-scale intensity peaks at ~10µs (matching engine response), 1-5ms (algorithmic reactions), and 100µs (cross-market propagation)
+    * **Endogenous Activity Validation**: Confirm that up to 80% of crypto trades are endogenous (triggered by past trades)
     * **Intraday Seasonality**: U-shaped volume patterns, spread variations
     * > [ASSUMPTION][R-OAI-07] Implement intraday pattern validation across time zones
     * **Microstructure Noise**: Implement Hausman test for noise detection
     * > [ASSUMPTION][R-CLD-09] Use Hausman test to validate microstructure noise preservation
-    * **Order Book Resilience**: Measure book recovery after large trades
+    * **Order Book Resilience**: Measure book recovery after large trades (<20 best limit updates in healthy markets)
     * Estimated effort: 4 days
 
 * **Story 3.2: Multi-Dimensional Microstructure Validation [NEW]:** Implement validation of complex market dynamics:
@@ -148,11 +149,12 @@ The work is structured into four logical epics, progressing from data acquisitio
     * > [ASSUMPTION][R-OAI-08] Implement empirical copula goodness-of-fit tests
     * **Cross-Sectional Dependencies**: Validate correlations across order book levels
     * > [ASSUMPTION][R-GEM-04] Use Pesaran CD test for cross-sectional dependence
-    * **Deep Book Imbalance Analysis**: Validate that deep-book imbalances retain their predictive power for short-term price movements
-    * **Order Book Imbalance Predictive Power**: Validate OFI regression coefficients
+    * **Deep Book Predictive Power**: Validate that L3-10 have strongest predictive power for 1-5 minute horizons, L10-20 critical for longer-term predictions
+    * **Order Book Imbalance Predictive Power**: Validate OFI regression coefficients at multiple depths (L5, L10, L20)
     * > [ASSUMPTION][R-CLD-10] OFI should predict short-term price movements with R² > 0.1
-    * **Hidden Liquidity Detection**: Validate iceberg order effects through slippage analysis
+    * **Hidden Liquidity Detection**: Validate iceberg order signatures (85-90% matching rates) through anomalous fill patterns
     * > [ASSUMPTION][R-GEM-05] Validate hidden liquidity via unexpected fill patterns
+    * **Asymmetric Deterioration**: Confirm ask-side liquidity deteriorates faster in volatile markets
     * Estimated effort: 5 days
 
 * **Story 3.3: RL-Specific Fidelity Metrics [NEW]:** Validate sim-to-real transfer for RL agents:
@@ -167,14 +169,14 @@ The work is structured into four logical epics, progressing from data acquisitio
     * Estimated effort: 5 days
 
 * **Story 3.4: Adversarial Dynamics Detection [NEW]:** Validate preservation of adversarial patterns:
-    * **Spoofing Detection**: Identify rapid order placement/cancellation patterns
+    * **Spoofing Detection**: Identify rapid order placement/cancellation patterns (10-50:1 volume ratios, <500ms cancellations)
     * > [ASSUMPTION][R-GEM-07] Spoofing frequency must match golden sample ±20%
     * **Fleeting Liquidity**: Validate sub-100ms order lifetime distributions
     * > [ASSUMPTION][R-CLD-12] Fleeting order percentage must match reality
-    * **Fleeting Quotes Validation**: Confirm the presence of fleeting quotes with sub-100ms lifetimes and realistic order-to-trade ratios during simulated quote stuffing events
-    * **Quote Stuffing**: Detect message rate bursts and volatility spikes
+    * **Quote Stuffing Validation**: Confirm presence of 2000+ orders/second bursts with 32:1 cancellation ratios
     * > [ASSUMPTION][R-OAI-10] Message burst patterns must be preserved
-    * **Market Manipulation Patterns**: Validate layering and momentum ignition
+    * **Momentum Ignition Detection**: Validate complete manipulation cycles <5 seconds (aggressive lifting → stop triggering → reverse profit-taking)
+    * **Market Manipulation Patterns**: Validate layering patterns with unbalanced quotes followed by immediate opposite-side execution
     * Estimated effort: 4 days
 
 * **Story 3.5: High-Performance Validation Architecture [NEW]:** Implement scalable validation pipeline:

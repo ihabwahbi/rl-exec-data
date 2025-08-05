@@ -118,6 +118,226 @@ The data pipeline will be composed of five primary components, each implemented 
 
 ## Component 3: `Reconstructor` ✅ COMPLETE
 
+### Tunability Architecture for IFR Workflow
+
+The Reconstructor implements a sophisticated parameter tuning system to support the Integrated Fidelity Refinement (IFR) workflow, enabling systematic adjustments based on FidelityReporter feedback:
+
+#### Configurable Parameters
+
+```python
+class ReconstructorConfig:
+    """Tunable parameters exposed for IFR refinement."""
+    
+    # Event Timing Parameters
+    timing_params = {
+        'event_jitter_ms': 0.0,          # Random jitter to simulate network delays
+        'clock_drift_ppb': 0,            # Parts-per-billion clock drift simulation
+        'latency_model': 'empirical',    # 'fixed', 'gaussian', 'empirical'
+        'latency_percentiles': [50, 95, 99],  # For empirical model
+    }
+    
+    # Order Book Dynamics
+    book_params = {
+        'liquidity_decay_rate': 0.95,    # How fast liquidity replenishes
+        'trade_impact_model': 'linear',  # 'linear', 'sqrt', 'logarithmic'
+        'impact_coefficient': 1.0,       # Kyle's lambda equivalent
+        'resilience_factor': 0.8,        # Book recovery speed after shocks
+        'max_book_depth': 20,            # Levels to maintain
+        'iceberg_detection': True,       # Infer hidden liquidity
+    }
+    
+    # Noise Models
+    noise_params = {
+        'microstructure_noise_std': 0.0001,  # Bid-ask bounce noise
+        'price_discretization': 0.01,        # Tick size
+        'volume_rounding': 'nearest',        # 'nearest', 'floor', 'probabilistic'
+        'timestamp_precision': 'microsecond', # 'nanosecond', 'microsecond', 'millisecond'
+    }
+    
+    # Event Generation
+    event_params = {
+        'clustering_kernel': 'hawkes',       # 'poisson', 'hawkes', 'empirical'
+        'hawkes_baseline': 0.1,              # Baseline intensity
+        'hawkes_excitation': 0.5,            # Self-excitation parameter
+        'hawkes_decay': 1.0,                 # Decay rate
+        'endogenous_ratio': 0.8,             # Target ratio of endogenous events
+    }
+    
+    # Adversarial Patterns (for injection/preservation)
+    adversarial_params = {
+        'spoofing_frequency': 0.0,           # Events per second
+        'spoofing_volume_ratio': 10,         # Fake vs real volume
+        'quote_stuffing_rate': 0,            # Messages per second
+        'momentum_ignition_prob': 0.0,       # Probability per large trade
+        'fleeting_quote_lifetime_ms': 100,   # Lifetime of fleeting quotes
+    }
+```
+
+#### Dynamic Tuning Interface
+
+```python
+class ReconstructorTuner:
+    """Interface for IFR workflow to tune Reconstructor parameters."""
+    
+    def __init__(self, reconstructor: Reconstructor):
+        self.reconstructor = reconstructor
+        self.parameter_history = []  # Track all adjustments
+        self.best_config = None
+        self.current_config = ReconstructorConfig()
+    
+    def apply_fidelity_feedback(self, 
+                                fidelity_report: FidelityReport) -> Dict:
+        """Analyze fidelity failures and suggest parameter adjustments."""
+        adjustments = {}
+        
+        # Analyze each failing metric
+        for metric_name, result in fidelity_report.failed_metrics.items():
+            if metric_name == 'hawkes_process_4d':
+                # Adjust clustering parameters
+                if result['branching_ratio'] < 0.95:
+                    adjustments['hawkes_excitation'] = (
+                        self.current_config.event_params['hawkes_excitation'] * 1.1
+                    )
+                if result['endogenous_ratio'] < 0.75:
+                    adjustments['endogenous_ratio'] = 0.8
+                    
+            elif metric_name == 'book_resilience':
+                # Adjust book dynamics
+                if result['recovery_time_ms'] > 20:
+                    adjustments['resilience_factor'] = (
+                        self.current_config.book_params['resilience_factor'] * 1.2
+                    )
+                    adjustments['liquidity_decay_rate'] = 0.98
+                    
+            elif metric_name == 'spread_dynamics':
+                # Adjust noise models
+                if result['spread_volatility'] < golden_spread_vol * 0.9:
+                    adjustments['microstructure_noise_std'] = (
+                        self.current_config.noise_params['microstructure_noise_std'] * 1.5
+                    )
+                    
+            elif metric_name == 'spoofing_detection':
+                # Adjust adversarial patterns
+                if result['detection_rate'] < 0.8:
+                    adjustments['spoofing_frequency'] = (
+                        golden_spoofing_rate * 1.2
+                    )
+        
+        return adjustments
+    
+    def update_parameters(self, adjustments: Dict) -> None:
+        """Apply parameter adjustments and track history."""
+        # Record current state
+        self.parameter_history.append({
+            'timestamp': datetime.now(),
+            'config': copy.deepcopy(self.current_config),
+            'adjustments': adjustments
+        })
+        
+        # Apply adjustments
+        for param_path, new_value in adjustments.items():
+            self._set_nested_param(param_path, new_value)
+        
+        # Propagate to Reconstructor
+        self.reconstructor.update_config(self.current_config)
+    
+    def rollback_to_best(self) -> None:
+        """Revert to best performing configuration."""
+        if self.best_config:
+            self.current_config = copy.deepcopy(self.best_config)
+            self.reconstructor.update_config(self.current_config)
+```
+
+#### Automated Tuning Loop
+
+```python
+class IFRTuningLoop:
+    """Automated refinement loop for Epic 3."""
+    
+    def __init__(self, reconstructor, fidelity_reporter, max_iterations=100):
+        self.tuner = ReconstructorTuner(reconstructor)
+        self.reporter = fidelity_reporter
+        self.max_iterations = max_iterations
+        self.convergence_threshold = 0.95  # 95% metrics passing
+    
+    async def refine_to_convergence(self, 
+                                   golden_data: pl.DataFrame) -> TuningResult:
+        """Iterate until fidelity converges or max iterations reached."""
+        
+        for iteration in range(self.max_iterations):
+            # Run reconstruction with current parameters
+            reconstructed = await self.reconstructor.process(source_data)
+            
+            # Validate against golden sample
+            report = await self.reporter.validate(
+                reconstructed, golden_data, tier='comprehensive'
+            )
+            
+            # Check convergence
+            if report.overall_score >= self.convergence_threshold:
+                return TuningResult(
+                    success=True,
+                    iterations=iteration + 1,
+                    final_score=report.overall_score,
+                    final_config=self.tuner.current_config
+                )
+            
+            # Apply feedback
+            adjustments = self.tuner.apply_fidelity_feedback(report)
+            if not adjustments:
+                # No more adjustments possible
+                break
+                
+            self.tuner.update_parameters(adjustments)
+            
+            # Track best configuration
+            if report.overall_score > self.best_score:
+                self.best_score = report.overall_score
+                self.tuner.best_config = copy.deepcopy(
+                    self.tuner.current_config
+                )
+        
+        # Max iterations reached without convergence
+        self.tuner.rollback_to_best()
+        return TuningResult(
+            success=False,
+            iterations=self.max_iterations,
+            final_score=self.best_score,
+            final_config=self.tuner.best_config
+        )
+```
+
+#### Integration with FidelityReporter
+
+The tuning system integrates seamlessly with the FidelityReporter's defect detection:
+
+```python
+# In FidelityReporter
+def generate_tuning_recommendations(self, 
+                                   failed_metrics: Dict) -> List[TuningHint]:
+    """Generate specific parameter adjustment hints."""
+    hints = []
+    
+    for metric_name, failure in failed_metrics.items():
+        hint = TuningHint(
+            metric=metric_name,
+            severity=failure['severity'],
+            parameter_path=self._map_metric_to_parameter(metric_name),
+            suggested_adjustment=self._calculate_adjustment(
+                failure['expected'], 
+                failure['actual']
+            ),
+            confidence=self._estimate_fix_confidence(failure)
+        )
+        hints.append(hint)
+    
+    return sorted(hints, key=lambda h: (h.severity, h.confidence), reverse=True)
+```
+
+This tunability architecture enables the systematic refinement required by the IFR workflow, transforming validation failures into concrete parameter adjustments that drive convergence toward the target fidelity.
+
+## Component 3: `Reconstructor` ✅ COMPLETE
+
 **Implementation Details**:
 
 ### Streaming Architecture
@@ -874,6 +1094,138 @@ TierCoordinator:
     - GPU: Time-sliced between Tier2 batches
     - Memory: Bounded buffers with backpressure
     - Network: Priority queues for alerts
+```
+
+### Adversarial Pattern Detection Module
+
+A dedicated sub-component within FidelityReporter for detecting market manipulation patterns:
+
+```python
+class AdversarialPatternDetector:
+    """Specialized module for detecting market manipulation signatures."""
+    
+    def __init__(self, sensitivity='medium'):
+        self.sensitivity = sensitivity
+        self.pattern_detectors = {
+            'spoofing': SpoofingDetector(),
+            'layering': LayeringDetector(),
+            'momentum_ignition': MomentumIgnitionDetector(),
+            'quote_stuffing': QuoteStuffingDetector(),
+            'wash_trading': WashTradingDetector()
+        }
+        self.alert_threshold = self._get_threshold(sensitivity)
+    
+    def analyze_window(self, events: pl.DataFrame, 
+                      window_size_ms: int = 5000) -> PatternReport:
+        """Analyze event window for adversarial patterns."""
+        results = {}
+        
+        # Quote Stuffing Detection
+        message_rate = self._calculate_message_rate(events)
+        if message_rate > 2000:  # 2000+ orders/second
+            cancel_ratio = self._calculate_cancellation_ratio(events)
+            if cancel_ratio > 32:  # 32:1 ratio
+                results['quote_stuffing'] = {
+                    'detected': True,
+                    'message_rate': message_rate,
+                    'cancel_ratio': cancel_ratio,
+                    'severity': 'HIGH',
+                    'timestamp': events['timestamp'].min()
+                }
+        
+        # Spoofing Detection
+        spoofing_patterns = self._detect_spoofing_patterns(events)
+        if spoofing_patterns:
+            results['spoofing'] = {
+                'detected': True,
+                'patterns': spoofing_patterns,
+                'volume_ratios': [p['volume_ratio'] for p in spoofing_patterns],
+                'avg_lifetime_ms': np.mean([p['lifetime_ms'] for p in spoofing_patterns]),
+                'severity': self._assess_spoofing_severity(spoofing_patterns)
+            }
+        
+        # Momentum Ignition Detection
+        ignition_cycles = self._detect_momentum_ignition(events)
+        if ignition_cycles:
+            results['momentum_ignition'] = {
+                'detected': True,
+                'cycles': ignition_cycles,
+                'avg_cycle_time_ms': np.mean([c['duration_ms'] for c in ignition_cycles]),
+                'price_impact_bps': np.mean([c['price_impact'] for c in ignition_cycles]),
+                'severity': 'CRITICAL' if any(c['duration_ms'] < 5000 for c in ignition_cycles) else 'MEDIUM'
+            }
+        
+        return PatternReport(
+            window_start=events['timestamp'].min(),
+            window_end=events['timestamp'].max(),
+            patterns_detected=results,
+            overall_manipulation_score=self._calculate_manipulation_score(results)
+        )
+    
+    def _detect_spoofing_patterns(self, events: pl.DataFrame) -> List[Dict]:
+        """Detect spoofing: large orders canceled <500ms."""
+        patterns = []
+        
+        # Find large orders
+        large_orders = events.filter(
+            (pl.col('event_type') == 'ORDER_PLACED') &
+            (pl.col('quantity') > pl.col('quantity').quantile(0.95))
+        )
+        
+        for order in large_orders.iter_rows(named=True):
+            # Check if canceled quickly
+            cancel = events.filter(
+                (pl.col('event_type') == 'ORDER_CANCELED') &
+                (pl.col('order_id') == order['order_id']) &
+                (pl.col('timestamp') - order['timestamp'] < 500_000_000)  # <500ms in nanoseconds
+            )
+            
+            if not cancel.is_empty():
+                # Check for opposite side execution
+                opposite_trade = events.filter(
+                    (pl.col('event_type') == 'TRADE') &
+                    (pl.col('side') != order['side']) &
+                    (pl.col('timestamp') > order['timestamp']) &
+                    (pl.col('timestamp') < cancel['timestamp'].max())
+                )
+                
+                if not opposite_trade.is_empty():
+                    patterns.append({
+                        'order_id': order['order_id'],
+                        'lifetime_ms': (cancel['timestamp'].max() - order['timestamp']) / 1e6,
+                        'volume_ratio': order['quantity'] / opposite_trade['quantity'].sum(),
+                        'price_level': order['price'],
+                        'side': order['side']
+                    })
+        
+        return patterns
+    
+    def _detect_momentum_ignition(self, events: pl.DataFrame) -> List[Dict]:
+        """Detect momentum ignition: aggressive lifting → stops → reversal."""
+        cycles = []
+        
+        # Identify aggressive trade sequences
+        trades = events.filter(pl.col('event_type') == 'TRADE')
+        
+        # Use rolling window to find rapid one-sided trading
+        for window in self._rolling_windows(trades, window_size=5000):  # 5 second windows
+            buy_volume = window.filter(pl.col('side') == 'BUY')['quantity'].sum()
+            sell_volume = window.filter(pl.col('side') == 'SELL')['quantity'].sum()
+            
+            # Check for heavy imbalance
+            if buy_volume > sell_volume * 3 or sell_volume > buy_volume * 3:
+                # Look for reversal in next window
+                next_window = self._get_next_window(trades, window)
+                if self._check_reversal(window, next_window):
+                    cycles.append({
+                        'start_time': window['timestamp'].min(),
+                        'duration_ms': (next_window['timestamp'].max() - window['timestamp'].min()) / 1e6,
+                        'initial_side': 'BUY' if buy_volume > sell_volume else 'SELL',
+                        'volume_imbalance': max(buy_volume, sell_volume) / min(buy_volume, sell_volume),
+                        'price_impact': self._calculate_price_impact(window, next_window)
+                    })
+        
+        return cycles
 ```
 
 ### Advanced Statistical Tests (Replacing K-S)
